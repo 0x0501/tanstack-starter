@@ -1,0 +1,31 @@
+{
+  "projectName": "tanstack-starter",
+  "mode": "file-router",
+  "typescript": true,
+  "packageManager": "bun",
+  "includeExamples": false,
+  "tailwind": true,
+  "addOnOptions": {
+    "drizzle": {
+      "database": "mysql"
+    }
+  },
+  "envVarValues": {},
+  "git": true,
+  "install": true,
+  "routerOnly": false,
+  "version": 1,
+  "framework": "react",
+  "chosenAddOns": [
+    "biome",
+    "cloudflare",
+    "compiler",
+    "drizzle",
+    "form",
+    "paraglide",
+    "t3env",
+    "table",
+    "better-auth",
+    "tanstack-query"
+  ]
+}

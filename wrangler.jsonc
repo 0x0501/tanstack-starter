@@ -1,0 +1,23 @@
+{
+	"$schema": "./node_modules/wrangler/config-schema.json",
+	"name": "tanstack-starter",
+	"compatibility_date": "2026-06-01",
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
+	"main": "@tanstack/react-start/server-entry",
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "tanstack-starter",
+			"database_id": "e8212d3f-a0ff-4c3f-9195-cd536dc1be99",
+			"migrations_dir": "./drizzle"
+		}
+	],
+	"send_email": [
+		{
+			"name": "EMAIL",
+			"remote": true
+		}
+	]
+}
