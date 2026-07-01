@@ -1,278 +1,82 @@
-Welcome to your new TanStack Start app! 
+# TanStack Start + Cloudflare + Better Auth
 
-# Getting Started
+A production-shaped template: **TanStack Start** on **Cloudflare Workers**, with **Better Auth** configured as a self-hosted **OAuth 2.0 / OIDC provider**, **Cloudflare D1 + Drizzle ORM**, transactional email, Turnstile captcha, and i18n.
 
-To run this application:
+## Features
+
+- TanStack Start (React 19, file-based routing, SSR) on Cloudflare Workers
+- Better Auth: email/password with verification, JWT, admin, Turnstile captcha, and a full OAuth2/OIDC **provider** (`/oauth2/authorize`, consent, token, discovery)
+- Cloudflare D1 (SQLite) via Drizzle ORM
+- Transactional email through the Cloudflare `send_email` binding (react-email templates)
+- Paraglide i18n, Tailwind CSS v4, Biome, Vitest, T3Env
+
+## Getting started
 
 ```bash
 bun install
-bun --bun run dev
+cp .env.example .env
+bunx --bun @better-auth/cli secret   # paste the value into BETTER_AUTH_SECRET
+bun run dev                          # http://localhost:3000
 ```
 
-# Building For Production
+Required env vars (validated in `src/env.ts`):
 
-To build this application for production:
+| Var | Purpose |
+|---|---|
+| `BETTER_AUTH_URL` | App origin, e.g. `http://localhost:3000` |
+| `BETTER_AUTH_SECRET` | Auth signing secret |
+| `TURNSTILE_SECRET_KEY` | Cloudflare Turnstile secret |
+| `EMAIL_FROM` | Verified sender for Cloudflare Email |
+
+## Database (Cloudflare D1 + Drizzle)
+
+The auth tables are **generated from the Better Auth config**, not hand-written:
 
 ```bash
-bun --bun run build
+bun run auth:generate   # src/lib/auth.ts  ->  src/db/auth.schema.ts
+bun run db:generate     # migrations into ./drizzle
+bun run db:migrate      # apply to D1
 ```
 
-## Testing
+Re-run `auth:generate` whenever you change plugins/fields in `src/lib/auth.ts`. For remote `db:push`/`db:migrate`, also set `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_DATABASE_ID`, and `CLOUDFLARE_D1_TOKEN` (see `drizzle.config.ts`); `db:generate` needs none of them.
 
-This project uses [Vitest](https://vitest.dev/) for testing. You can run the tests with:
+## Authentication & OAuth provider
+
+Config lives in `src/lib/auth.ts`. This app *is* an identity provider — other apps can authenticate against it over OAuth2/OIDC.
+
+- Login page: `src/routes/sign-in.tsx` (also serves as the OAuth `loginPage`)
+- Consent page: `src/routes/oauth/consent.tsx`
+- Discovery / metadata: `/api/auth/.well-known/openid-configuration`, `/.well-known/oauth-authorization-server/api/auth`, `/.well-known/oauth-protected-resource`
+
+See [AGENTS.md](./AGENTS.md) for the full auth architecture and flow.
+
+## Scripts
+
+| Command | What |
+|---|---|
+| `bun run dev` / `build` / `deploy` | develop / build / build + `wrangler deploy` |
+| `bun run test` | Vitest |
+| `bun run check` | Biome lint + format |
+| `bun run generate-routes` | regenerate the route tree |
+
+## Deploy to Cloudflare
 
 ```bash
-bun --bun run test
+npm install -g wrangler
+wrangler login
+bun run deploy
 ```
 
-## Styling
+Bindings (D1 `DB`, `send_email` `EMAIL`) are declared in `wrangler.jsonc`. Add production secrets with `wrangler secret put <NAME>` for each entry in `.env.example`.
 
-This project uses [Tailwind CSS](https://tailwindcss.com/) for styling.
+## Project layout
 
-### Removing Tailwind CSS
+- `src/routes/` — pages + API routes (`api/auth/$.ts` mounts Better Auth)
+- `src/lib/` — `auth.ts`, `auth-client.ts`, `email.tsx`
+- `src/db/` — Drizzle setup + generated schema
+- `src/middlewares/` — DB + auth request middleware
+- `messages/`, `project.inlang/` — i18n
 
-If you prefer not to use Tailwind CSS:
+## Learn more
 
-1. Remove the demo pages in `src/routes/demo/`
-2. Replace the Tailwind import in `src/styles.css` with your own styles
-3. Remove `tailwindcss()` from the plugins array in `vite.config.ts`
-4. Uninstall the packages: `bun install @tailwindcss/vite tailwindcss -D`
-
-## Linting & Formatting
-
-This project uses [Biome](https://biomejs.dev/) for linting and formatting. The following scripts are available:
-
-
-```bash
-bun --bun run lint
-bun --bun run format
-bun --bun run check
-```
-
-
-## Deploy to Cloudflare Workers
-
-This project uses the Cloudflare Vite plugin (configured in `vite.config.ts`) and `wrangler.jsonc`:
-
-1. Install Wrangler: `npm install -g wrangler`
-2. Authenticate: `wrangler login`
-3. Deploy: `npx wrangler deploy`
-
-For production env vars, run `wrangler secret put MY_VAR` for each secret listed in `.env.example`. Public (non-secret) vars go in `wrangler.jsonc` under `vars`.
-
-KV, D1, R2, and Durable Object bindings are configured in `wrangler.jsonc` — see https://developers.cloudflare.com/workers/wrangler/configuration/.
-
-
-# Paraglide i18n
-
-This add-on wires up ParaglideJS for localized routing and message formatting.
-
-- Messages live in `project.inlang/messages`.
-- URLs are localized through the Paraglide Vite plugin and router `rewrite` hooks.
-- Run the dev server or build to regenerate the `src/paraglide` outputs.
-
-
-## T3Env
-
-- You can use T3Env to add type safety to your environment variables.
-- Add Environment variables to the `src/env.mjs` file.
-- Use the environment variables in your code.
-
-### Usage
-
-```ts
-import { env } from "#/env";
-
-console.log(env.VITE_APP_TITLE);
-```
-
-
-
-
-
-## Setting up Better Auth
-
-1. Generate and set the `BETTER_AUTH_SECRET` environment variable in your `.env.local`:
-
-   ```bash
-   bunx --bun @better-auth/cli secret
-   ```
-
-2. Visit the [Better Auth documentation](https://www.better-auth.com) to unlock the full potential of authentication in your app.
-
-### Adding a Database (Optional)
-
-Better Auth can work in stateless mode, but to persist user data, add a database:
-
-```typescript
-// src/lib/auth.ts
-import { betterAuth } from "better-auth";
-import { Pool } from "pg";
-
-export const auth = betterAuth({
-  database: new Pool({
-    connectionString: process.env.DATABASE_URL,
-  }),
-  // ... rest of config
-});
-```
-
-Then run migrations:
-
-```bash
-bunx --bun @better-auth/cli migrate
-```
-
-
-
-## Routing
-
-This project uses [TanStack Router](https://tanstack.com/router) with file-based routing. Routes are managed as files in `src/routes`.
-
-### Adding A Route
-
-To add a new route to your application just add a new file in the `./src/routes` directory.
-
-TanStack will automatically generate the content of the route file for you.
-
-Now that you have two routes you can use a `Link` component to navigate between them.
-
-### Adding Links
-
-To use SPA (Single Page Application) navigation you will need to import the `Link` component from `@tanstack/react-router`.
-
-```tsx
-import { Link } from "@tanstack/react-router";
-```
-
-Then anywhere in your JSX you can use it like so:
-
-```tsx
-<Link to="/about">About</Link>
-```
-
-This will create a link that will navigate to the `/about` route.
-
-More information on the `Link` component can be found in the [Link documentation](https://tanstack.com/router/v1/docs/framework/react/api/router/linkComponent).
-
-### Using A Layout
-
-In the File Based Routing setup the layout is located in `src/routes/__root.tsx`. Anything you add to the root route will appear in all the routes. The route content will appear in the JSX where you render `{children}` in the `shellComponent`.
-
-Here is an example layout that includes a header:
-
-```tsx
-import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
-
-export const Route = createRootRoute({
-  head: () => ({
-    meta: [
-      { charSet: 'utf-8' },
-      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { title: 'My App' },
-    ],
-  }),
-  shellComponent: ({ children }) => (
-    <html lang="en">
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        <header>
-          <nav>
-            <Link to="/">Home</Link>
-            <Link to="/about">About</Link>
-          </nav>
-        </header>
-        {children}
-        <Scripts />
-      </body>
-    </html>
-  ),
-})
-```
-
-More information on layouts can be found in the [Layouts documentation](https://tanstack.com/router/latest/docs/framework/react/guide/routing-concepts#layouts).
-
-## Server Functions
-
-TanStack Start provides server functions that allow you to write server-side code that seamlessly integrates with your client components.
-
-```tsx
-import { createServerFn } from '@tanstack/react-start'
-
-const getServerTime = createServerFn({
-  method: 'GET',
-}).handler(async () => {
-  return new Date().toISOString()
-})
-
-// Use in a component
-function MyComponent() {
-  const [time, setTime] = useState('')
-  
-  useEffect(() => {
-    getServerTime().then(setTime)
-  }, [])
-  
-  return <div>Server time: {time}</div>
-}
-```
-
-## API Routes
-
-You can create API routes by using the `server` property in your route definitions:
-
-```tsx
-import { createFileRoute } from '@tanstack/react-router'
-import { json } from '@tanstack/react-start'
-
-export const Route = createFileRoute('/api/hello')({
-  server: {
-    handlers: {
-      GET: () => json({ message: 'Hello, World!' }),
-    },
-  },
-})
-```
-
-## Data Fetching
-
-There are multiple ways to fetch data in your application. You can use TanStack Query to fetch data from a server. But you can also use the `loader` functionality built into TanStack Router to load the data for a route before it's rendered.
-
-For example:
-
-```tsx
-import { createFileRoute } from '@tanstack/react-router'
-
-export const Route = createFileRoute('/people')({
-  loader: async () => {
-    const response = await fetch('https://swapi.dev/api/people')
-    return response.json()
-  },
-  component: PeopleComponent,
-})
-
-function PeopleComponent() {
-  const data = Route.useLoaderData()
-  return (
-    <ul>
-      {data.results.map((person) => (
-        <li key={person.name}>{person.name}</li>
-      ))}
-    </ul>
-  )
-}
-```
-
-Loaders simplify your data fetching logic dramatically. Check out more information in the [Loader documentation](https://tanstack.com/router/latest/docs/framework/react/guide/data-loading#loader-parameters).
-
-# Demo files
-
-Files prefixed with `demo` can be safely deleted. They are there to provide a starting point for you to play around with the features you've installed.
-
-# Learn More
-
-You can learn more about all of the offerings from TanStack in the [TanStack documentation](https://tanstack.com).
-
-For TanStack Start specific documentation, visit [TanStack Start](https://tanstack.com/start).
+[TanStack Start](https://tanstack.com/start) · [Better Auth](https://www.better-auth.com) · [Drizzle](https://orm.drizzle.team) · [Cloudflare Workers](https://developers.cloudflare.com/workers/)
