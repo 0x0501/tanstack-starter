@@ -5,7 +5,7 @@ import { admin, captcha, jwt } from "better-auth/plugins";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 import type { Database } from "@/db";
 import { env } from "@/env";
-import { sendResetPasswordEmail } from "./email";
+import { sendResetPasswordEmail, sendVerificationEmail } from "./email";
 
 const HOUR = 60 * 60;
 const DAY = 24 * HOUR;
@@ -13,6 +13,10 @@ const DAY = 24 * HOUR;
 export function createAuth(db: Database) {
 	return betterAuth({
 		baseURL: env.BETTER_AUTH_URL,
+		// Disable the jwt plugin's /token shortcut so session holders can't mint a
+		// signed JWT outside the OAuth flow. Matches the official jwt+oauthProvider
+		// mounting example. Remove if you consume /api/auth/token directly.
+		disabledPaths: ["/token"],
 		database: drizzleAdapter(db, {
 			provider: "sqlite",
 		}),
@@ -27,7 +31,7 @@ export function createAuth(db: Database) {
 			sendOnSignUp: true,
 			autoSignInAfterVerification: true,
 			sendVerificationEmail: async ({ user, url }) => {
-				await sendResetPasswordEmail({ to: user.email, url, name: user.name });
+				await sendVerificationEmail({ to: user.email, url, name: user.name });
 			},
 		},
 		plugins: [
@@ -36,8 +40,8 @@ export function createAuth(db: Database) {
 				loginPage: "/sign-in",
 				consentPage: "/oauth/consent",
 
-        // For who uses the token
-				validAudiences: env.BETTER_AUTH_AUDIENCES,
+				// For who uses the token
+				validAudiences: [],
 
 				// disable users create oauth client
 				clientPrivileges: () => false,

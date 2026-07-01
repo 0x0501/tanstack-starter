@@ -6,7 +6,6 @@ export const env = createEnv({
     SERVER_URL: z.url().optional(),
     BETTER_AUTH_URL: z.url(),
     BETTER_AUTH_SECRET: z.string(),
-    BETTER_AUTH_AUDIENCES: z.array(z.string()),
     TURNSTILE_SECRET_KEY: z.string(),
     EMAIL_FROM: z.string(),
 
