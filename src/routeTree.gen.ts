@@ -9,13 +9,19 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as OauthConsentRouteImport } from './routes/oauth/consent'
+import { Route as DotwellKnownOauthProtectedResourceRouteImport } from './routes/[.]well-known/oauth-protected-resource'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
-import { Route as DotwellKnownOauthProtectedResourceResRouteImport } from './routes/[.]well-known/oauth-protected-resource/res'
 import { Route as ApiAuthDotwellKnownOpenidConfigurationRouteImport } from './routes/api/auth/[.]well-known/openid-configuration'
-import { Route as ApiAuthDotwellKnownOauthAuthorizationServerRouteImport } from './routes/api/auth/[.]well-known/oauth-authorization-server'
+import { Route as DotwellKnownOauthAuthorizationServerApiAuthRouteImport } from './routes/[.]well-known/oauth-authorization-server/api/auth'
 
+const SignInRoute = SignInRouteImport.update({
+  id: '/sign-in',
+  path: '/sign-in',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -26,93 +32,107 @@ const OauthConsentRoute = OauthConsentRouteImport.update({
   path: '/oauth/consent',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DotwellKnownOauthProtectedResourceRoute =
+  DotwellKnownOauthProtectedResourceRouteImport.update({
+    id: '/.well-known/oauth-protected-resource',
+    path: '/.well-known/oauth-protected-resource',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DotwellKnownOauthProtectedResourceResRoute =
-  DotwellKnownOauthProtectedResourceResRouteImport.update({
-    id: '/.well-known/oauth-protected-resource/res',
-    path: '/.well-known/oauth-protected-resource/res',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const ApiAuthDotwellKnownOpenidConfigurationRoute =
   ApiAuthDotwellKnownOpenidConfigurationRouteImport.update({
     id: '/api/auth/.well-known/openid-configuration',
     path: '/api/auth/.well-known/openid-configuration',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiAuthDotwellKnownOauthAuthorizationServerRoute =
-  ApiAuthDotwellKnownOauthAuthorizationServerRouteImport.update({
-    id: '/api/auth/.well-known/oauth-authorization-server',
-    path: '/api/auth/.well-known/oauth-authorization-server',
+const DotwellKnownOauthAuthorizationServerApiAuthRoute =
+  DotwellKnownOauthAuthorizationServerApiAuthRouteImport.update({
+    id: '/.well-known/oauth-authorization-server/api/auth',
+    path: '/.well-known/oauth-authorization-server/api/auth',
     getParentRoute: () => rootRouteImport,
   } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/sign-in': typeof SignInRoute
+  '/.well-known/oauth-protected-resource': typeof DotwellKnownOauthProtectedResourceRoute
   '/oauth/consent': typeof OauthConsentRoute
-  '/.well-known/oauth-protected-resource/res': typeof DotwellKnownOauthProtectedResourceResRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/api/auth/.well-known/oauth-authorization-server': typeof ApiAuthDotwellKnownOauthAuthorizationServerRoute
+  '/.well-known/oauth-authorization-server/api/auth': typeof DotwellKnownOauthAuthorizationServerApiAuthRoute
   '/api/auth/.well-known/openid-configuration': typeof ApiAuthDotwellKnownOpenidConfigurationRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/sign-in': typeof SignInRoute
+  '/.well-known/oauth-protected-resource': typeof DotwellKnownOauthProtectedResourceRoute
   '/oauth/consent': typeof OauthConsentRoute
-  '/.well-known/oauth-protected-resource/res': typeof DotwellKnownOauthProtectedResourceResRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/api/auth/.well-known/oauth-authorization-server': typeof ApiAuthDotwellKnownOauthAuthorizationServerRoute
+  '/.well-known/oauth-authorization-server/api/auth': typeof DotwellKnownOauthAuthorizationServerApiAuthRoute
   '/api/auth/.well-known/openid-configuration': typeof ApiAuthDotwellKnownOpenidConfigurationRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/sign-in': typeof SignInRoute
+  '/.well-known/oauth-protected-resource': typeof DotwellKnownOauthProtectedResourceRoute
   '/oauth/consent': typeof OauthConsentRoute
-  '/.well-known/oauth-protected-resource/res': typeof DotwellKnownOauthProtectedResourceResRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/api/auth/.well-known/oauth-authorization-server': typeof ApiAuthDotwellKnownOauthAuthorizationServerRoute
+  '/.well-known/oauth-authorization-server/api/auth': typeof DotwellKnownOauthAuthorizationServerApiAuthRoute
   '/api/auth/.well-known/openid-configuration': typeof ApiAuthDotwellKnownOpenidConfigurationRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/sign-in'
+    | '/.well-known/oauth-protected-resource'
     | '/oauth/consent'
-    | '/.well-known/oauth-protected-resource/res'
     | '/api/auth/$'
-    | '/api/auth/.well-known/oauth-authorization-server'
+    | '/.well-known/oauth-authorization-server/api/auth'
     | '/api/auth/.well-known/openid-configuration'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/sign-in'
+    | '/.well-known/oauth-protected-resource'
     | '/oauth/consent'
-    | '/.well-known/oauth-protected-resource/res'
     | '/api/auth/$'
-    | '/api/auth/.well-known/oauth-authorization-server'
+    | '/.well-known/oauth-authorization-server/api/auth'
     | '/api/auth/.well-known/openid-configuration'
   id:
     | '__root__'
     | '/'
+    | '/sign-in'
+    | '/.well-known/oauth-protected-resource'
     | '/oauth/consent'
-    | '/.well-known/oauth-protected-resource/res'
     | '/api/auth/$'
-    | '/api/auth/.well-known/oauth-authorization-server'
+    | '/.well-known/oauth-authorization-server/api/auth'
     | '/api/auth/.well-known/openid-configuration'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  SignInRoute: typeof SignInRoute
+  DotwellKnownOauthProtectedResourceRoute: typeof DotwellKnownOauthProtectedResourceRoute
   OauthConsentRoute: typeof OauthConsentRoute
-  DotwellKnownOauthProtectedResourceResRoute: typeof DotwellKnownOauthProtectedResourceResRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
-  ApiAuthDotwellKnownOauthAuthorizationServerRoute: typeof ApiAuthDotwellKnownOauthAuthorizationServerRoute
+  DotwellKnownOauthAuthorizationServerApiAuthRoute: typeof DotwellKnownOauthAuthorizationServerApiAuthRoute
   ApiAuthDotwellKnownOpenidConfigurationRoute: typeof ApiAuthDotwellKnownOpenidConfigurationRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sign-in': {
+      id: '/sign-in'
+      path: '/sign-in'
+      fullPath: '/sign-in'
+      preLoaderRoute: typeof SignInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -127,18 +147,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OauthConsentRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/.well-known/oauth-protected-resource': {
+      id: '/.well-known/oauth-protected-resource'
+      path: '/.well-known/oauth-protected-resource'
+      fullPath: '/.well-known/oauth-protected-resource'
+      preLoaderRoute: typeof DotwellKnownOauthProtectedResourceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
       fullPath: '/api/auth/$'
       preLoaderRoute: typeof ApiAuthSplatRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/.well-known/oauth-protected-resource/res': {
-      id: '/.well-known/oauth-protected-resource/res'
-      path: '/.well-known/oauth-protected-resource/res'
-      fullPath: '/.well-known/oauth-protected-resource/res'
-      preLoaderRoute: typeof DotwellKnownOauthProtectedResourceResRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/auth/.well-known/openid-configuration': {
@@ -148,11 +168,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthDotwellKnownOpenidConfigurationRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/auth/.well-known/oauth-authorization-server': {
-      id: '/api/auth/.well-known/oauth-authorization-server'
-      path: '/api/auth/.well-known/oauth-authorization-server'
-      fullPath: '/api/auth/.well-known/oauth-authorization-server'
-      preLoaderRoute: typeof ApiAuthDotwellKnownOauthAuthorizationServerRouteImport
+    '/.well-known/oauth-authorization-server/api/auth': {
+      id: '/.well-known/oauth-authorization-server/api/auth'
+      path: '/.well-known/oauth-authorization-server/api/auth'
+      fullPath: '/.well-known/oauth-authorization-server/api/auth'
+      preLoaderRoute: typeof DotwellKnownOauthAuthorizationServerApiAuthRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -160,12 +180,13 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  SignInRoute: SignInRoute,
+  DotwellKnownOauthProtectedResourceRoute:
+    DotwellKnownOauthProtectedResourceRoute,
   OauthConsentRoute: OauthConsentRoute,
-  DotwellKnownOauthProtectedResourceResRoute:
-    DotwellKnownOauthProtectedResourceResRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
-  ApiAuthDotwellKnownOauthAuthorizationServerRoute:
-    ApiAuthDotwellKnownOauthAuthorizationServerRoute,
+  DotwellKnownOauthAuthorizationServerApiAuthRoute:
+    DotwellKnownOauthAuthorizationServerApiAuthRoute,
   ApiAuthDotwellKnownOpenidConfigurationRoute:
     ApiAuthDotwellKnownOpenidConfigurationRoute,
 }
