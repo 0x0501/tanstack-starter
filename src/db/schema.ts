@@ -1,1 +1,1 @@
-import "./auth.schema";
+export * from "./auth.schema";
