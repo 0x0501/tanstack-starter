@@ -4,6 +4,7 @@ dist
 dist-ssr
 *.local
 .env
+.env.prod
 .nitro
 .tanstack
 .wrangler
@@ -11,5 +12,10 @@ dist-ssr
 .vinxi
 __unconfig*
 todos.json
+
+# Playwright
+test-results/
+playwright-report/
+blob-report/
 .tokensave
 .serena

@@ -1,0 +1,47 @@
+# Local Postgres for TanStack Starter development.
+# Usage: bun run db:up   /   bun run db:down
+#
+# Credentials live in .env.docker (committed dev defaults).
+# Mirror the same passwords in .env (DATABASE_MIGRATION_URL) and
+# wrangler.jsonc hyperdrive.localConnectionString.
+
+services:
+  postgres:
+    image: postgres:17
+    container_name: tanstack-starter-db
+    restart: unless-stopped
+
+    env_file:
+      - .env.docker
+
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      PGDATA: /var/lib/postgresql/data/pgdata
+
+      # runtime db user (read by create-app-role.sh)
+      APP_DB_USER: ${APP_DB_USER}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD}
+
+    # Host port (POSTGRES_PORT) → container 5432 (Postgres always listens on 5432 inside).
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+
+    volumes:
+      - tanstack_starter_data:/var/lib/postgresql/data
+      - ./scripts/postgres:/docker-entrypoint-initdb.d:ro
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"',
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+volumes:
+  tanstack_starter_data:

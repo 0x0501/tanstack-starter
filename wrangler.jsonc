@@ -2,22 +2,38 @@
 	"$schema": "./node_modules/wrangler/config-schema.json",
 	"name": "tanstack-starter",
 	"compatibility_date": "2026-06-01",
-	"compatibility_flags": [
-		"nodejs_compat"
-	],
-	"main": "@tanstack/react-start/server-entry",
-	"d1_databases": [
+	"compatibility_flags": ["nodejs_compat"],
+	// Custom entry: paraglideMiddleware + Start (original Request under Paraglide).
+	"main": "src/server.ts",
+	// Personalized SSR (session chrome / dashboard) is never safe to edge-cache
+	// by URL alone — one visitor's cookies must not poison another's HTML.
+	"cache": {
+		"enabled": false
+	},
+	"hyperdrive": [
 		{
-			"binding": "DB",
-			"database_name": "tanstack-starter",
-			"database_id": "e8212d3f-a0ff-4c3f-9195-cd536dc1be99",
-			"migrations_dir": "./drizzle"
+			"binding": "HYPERDRIVE",
+			// Replace with your Hyperdrive config id before deploy.
+			"id": "00000000000000000000000000000000",
+			// Matches .env.docker APP_DB_* + POSTGRES_DB + POSTGRES_PORT (default 5432).
+			"localConnectionString": "postgresql://starter_app:starter_app_dev_password@localhost:5432/starter"
 		}
 	],
 	"send_email": [
 		{
-			"name": "EMAIL",
-			"remote": true
+			"name": "EMAIL"
+			// Set "remote": true only when authenticated for Cloudflare Email Sending.
+			// Local `vite dev` fails with expired wrangler tokens if remote is forced.
+		}
+	],
+	// Workers Rate Limiting — shared across isolates in a location. Auth catch-all
+	// uses AUTH_RATE_LIMITER for credential-stuffing / email-bomb paths only.
+	// Local/dev without the binding is a no-op (middleware checks undefined).
+	"ratelimits": [
+		{
+			"name": "AUTH_RATE_LIMITER",
+			"namespace_id": "1001",
+			"simple": { "limit": 20, "period": 60 }
 		}
 	]
 }
