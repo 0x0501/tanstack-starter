@@ -13,19 +13,26 @@ import {
 
 import * as s from "./theme.ts";
 
-export function VerifyEmail({ url, name }: { url: string; name?: string }) {
+export function VerifyEmail({
+	url,
+	name,
+	brandName,
+}: {
+	url: string;
+	name?: string;
+	brandName: string;
+}) {
 	return (
 		<Html>
 			<Head />
-			<Preview>Confirm your email to start using Privsnap</Preview>
+			<Preview>Confirm your email for {brandName}</Preview>
 			<Body style={s.main}>
 				<Container style={s.container}>
-					<Text style={s.wordmark}>Privsnap</Text>
+					<Text style={s.wordmark}>{brandName}</Text>
 					<Heading style={s.heading}>Confirm your email</Heading>
 					<Text style={s.text}>
 						{name ? `Welcome, ${name}. ` : "Welcome. "}
-						Confirm this address to finish setting up your account and start
-						reading text from images and PDFs, privately in your browser.
+						Confirm this address to finish setting up your account.
 					</Text>
 					<Section style={{ textAlign: "center", margin: "32px 0 4px" }}>
 						<Button href={url} style={s.button}>
@@ -38,8 +45,8 @@ export function VerifyEmail({ url, name }: { url: string; name?: string }) {
 					<Text style={s.linkText}>{url}</Text>
 					<Hr style={s.hr} />
 					<Text style={s.footer}>
-						You received this because someone signed up for Privsnap with this
-						address. If that was not you, you can safely ignore this email.
+						You received this because someone signed up for {brandName} with
+						this address. If that was not you, you can safely ignore this email.
 					</Text>
 				</Container>
 			</Body>
@@ -48,8 +55,9 @@ export function VerifyEmail({ url, name }: { url: string; name?: string }) {
 }
 
 VerifyEmail.PreviewProps = {
-	url: "https://privsnap.app/api/auth/verify-email?token=preview-token",
+	url: "https://example.com/api/auth/verify-email?token=preview-token",
 	name: "Ada",
+	brandName: "Starter",
 };
 
 export default VerifyEmail;

@@ -16,22 +16,24 @@ import * as s from "./theme.ts";
 export function ResetPasswordEmail({
 	url,
 	name,
+	brandName,
 }: {
 	url: string;
 	name?: string;
+	brandName: string;
 }) {
 	return (
 		<Html>
 			<Head />
-			<Preview>Reset your Privsnap password</Preview>
+			<Preview>Reset your {brandName} password</Preview>
 			<Body style={s.main}>
 				<Container style={s.container}>
-					<Text style={s.wordmark}>Privsnap</Text>
+					<Text style={s.wordmark}>{brandName}</Text>
 					<Heading style={s.heading}>Reset your password</Heading>
 					<Text style={s.text}>
 						{name ? `Hello, ${name}. ` : "Hello. "}
-						We received a request to reset your Privsnap password. Choose a new
-						one with the button below. This link expires in one hour.
+						We received a request to reset your {brandName} password. Choose a
+						new one with the button below. This link expires in one hour.
 					</Text>
 					<Section style={{ textAlign: "center", margin: "32px 0 4px" }}>
 						<Button href={url} style={s.button}>
@@ -54,8 +56,9 @@ export function ResetPasswordEmail({
 }
 
 ResetPasswordEmail.PreviewProps = {
-	url: "https://privsnap.app/reset-password?token=preview-token",
+	url: "https://example.com/reset-password?token=preview-token",
 	name: "Ada",
+	brandName: "Starter",
 };
 
 export default ResetPasswordEmail;

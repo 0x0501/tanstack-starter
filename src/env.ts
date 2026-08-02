@@ -1,48 +1,65 @@
-import { createEnv } from '@t3-oss/env-core'
-import { z } from 'zod'
+import { createEnv } from "@t3-oss/env-core";
+import { z } from "zod";
 
-export const env = createEnv({
-  server: {
-    SERVER_URL: z.url().optional(),
-    BETTER_AUTH_URL: z.url(),
-    BETTER_AUTH_SECRET: z.string(),
-    TURNSTILE_SECRET_KEY: z.string(),
-    EMAIL_FROM: z.string(),
+function createAppEnv() {
+	return createEnv({
+		server: {
+			APP_ORIGIN: z.url(),
+			SERVER_URL: z.url().optional(),
+			BETTER_AUTH_URL: z.url(),
+			BETTER_AUTH_SECRET: z.string().min(1),
+			// Comma-separated OAuth resource audiences; empty defaults to APP_ORIGIN.
+			BETTER_AUTH_AUDIENCES: z.string().optional(),
+			TURNSTILE_SECRET_KEY: z.string().optional(),
+			EMAIL_FROM: z.string().min(1),
+			/** Inbox From display name — clone-time brand string. */
+			EMAIL_FROM_NAME: z.string().min(1).default("Starter"),
 
-    // creem.io payment
-    CREEM_API_KEY: z.string().optional(),
-    CREEM_WEBHOOK_SECRET: z.string().optional(),
-    CREEM_TEST_MODE: z.boolean().default(false),
-  },
+			GITHUB_CLIENT_ID: z.string().optional(),
+			GITHUB_CLIENT_SECRET: z.string().optional(),
 
-  /**
-   * The prefix that client-side variables must have. This is enforced both at
-   * a type-level and at runtime.
-   */
-  clientPrefix: 'VITE_',
+			// Optional payment adapters — absence means inactive.
+			CREEM_API_KEY: z.string().optional(),
+			CREEM_WEBHOOK_SECRET: z.string().optional(),
+			CREEM_PRODUCT_ID: z.string().optional(),
+			CREEM_TEST_MODE: z.stringbool().default(false),
 
-  client: {
-    VITE_APP_TITLE: z.string().min(1).optional(),
-  },
+			STRIPE_SECRET_KEY: z.string().optional(),
+			STRIPE_WEBHOOK_SECRET: z.string().optional(),
 
-  /**
-   * What object holds the environment variables at runtime. This is usually
-   * `process.env` or `import.meta.env`.
-   */
-  runtimeEnv: process.env,
+			NOW_PAYMENTS_API_KEY: z.string().optional(),
+			NOW_PAYMENTS_IPN_KEY: z.string().optional(),
+			NOW_PAYMENTS_TEST_MODE: z.stringbool().default(false),
+		},
 
-  /**
-   * By default, this library will feed the environment variables directly to
-   * the Zod validator.
-   *
-   * This means that if you have an empty string for a value that is supposed
-   * to be a number (e.g. `PORT=` in a ".env" file), Zod will incorrectly flag
-   * it as a type mismatch violation. Additionally, if you have an empty string
-   * for a value that is supposed to be a string with a default value (e.g.
-   * `DOMAIN=` in an ".env" file), the default value will never be applied.
-   *
-   * In order to solve these issues, we recommend that all new projects
-   * explicitly specify this option as true.
-   */
-  emptyStringAsUndefined: true,
-})
+		clientPrefix: "VITE_",
+
+		client: {
+			VITE_APP_TITLE: z.string().min(1).optional(),
+			VITE_APP_ORIGIN: z.url().optional(),
+			VITE_TURNSTILE_SITE_KEY: z.string().min(1).optional(),
+			// Public GitHub OAuth client id (same value as GITHUB_CLIENT_ID).
+			// When set with GITHUB_CLIENT_SECRET, the provider is enabled end-to-end.
+			VITE_GITHUB_CLIENT_ID: z.string().min(1).optional(),
+		},
+
+		runtimeEnv: process.env,
+		emptyStringAsUndefined: true,
+	});
+}
+
+type AppEnv = ReturnType<typeof createAppEnv>;
+
+let appEnv: AppEnv | undefined;
+
+export function getEnv() {
+	if (!appEnv) appEnv = createAppEnv();
+	return appEnv;
+}
+
+/** Lazy proxy so importing modules does not force env validation at load time in tests. */
+export const env = new Proxy({} as AppEnv, {
+	get(_target, prop, receiver) {
+		return Reflect.get(getEnv(), prop, receiver);
+	},
+});
