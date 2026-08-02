@@ -1,49 +1,79 @@
-// Locale switcher refs:
-// - Paraglide docs: https://inlang.com/m/gerre34r/library-inlang-paraglideJs
-// - Router example: https://github.com/TanStack/router/tree/main/examples/react/i18n-paraglide#switching-locale
+import { Menu } from "@base-ui/react/menu";
+import { useLocation } from "@tanstack/react-router";
+import { LOCALE_COOKIE, writeLocaleCookie } from "@/lib/locale-cookie";
+import * as m from "@/paraglide/messages";
+import { getLocale, locales } from "@/paraglide/runtime";
+import { samePageLocaleHref } from "@/utils/same-page-locale-href";
+import { cn } from "@/utils/cn";
 
-import { m } from "@/paraglide/messages";
-import { getLocale, locales, setLocale } from "@/paraglide/runtime";
+const LABEL: Record<string, () => string> = {
+	en: () => m.locale_en(),
+	de: () => m.locale_de(),
+};
 
-export default function ParaglideLocaleSwitcher() {
-	const currentLocale = getLocale();
+/**
+ * Language switcher: menu of real same-page localized anchors (path, query,
+ * hash preserved) plus a locale cookie write. Primary control is not a button
+ * that only calls setLocale.
+ */
+export function LocaleSwitcher({
+	variant = "button",
+}: {
+	variant?: "button" | "bare";
+} = {}) {
+	const location = useLocation();
+	const current = getLocale();
+	const bare = variant === "bare";
 
 	return (
-		// biome-ignore lint/a11y/useAriaPropsSupportedByRole: i18n
-		<div
-			style={{
-				display: "flex",
-				gap: "0.5rem",
-				alignItems: "center",
-				color: "inherit",
-			}}
-			aria-label={m.language_label()}
-		>
-			<span style={{ opacity: 0.85 }}>
-				{m.current_locale({ locale: currentLocale })}
-			</span>
-			<div style={{ display: "flex", gap: "0.25rem" }}>
-				{locales.map((locale) => (
-					<button
-						type="button"
-						key={locale}
-						onClick={() => setLocale(locale)}
-						aria-pressed={locale === currentLocale}
-						style={{
-							cursor: "pointer",
-							padding: "0.35rem 0.75rem",
-							borderRadius: "999px",
-							border: "1px solid #d1d5db",
-							background: locale === currentLocale ? "#0f172a" : "transparent",
-							color: locale === currentLocale ? "#f8fafc" : "inherit",
-							fontWeight: locale === currentLocale ? 700 : 500,
-							letterSpacing: "0.01em",
-						}}
+		<Menu.Root>
+			<Menu.Trigger
+				aria-label={m.language_label()}
+				data-testid="locale-switcher"
+				className={cn(
+					"inline-flex h-8 items-center gap-1 rounded px-2 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring",
+					bare
+						? "text-muted-foreground hover:text-foreground"
+						: "border border-border text-foreground hover:bg-muted",
+				)}
+			>
+				<span className="font-medium uppercase">{current}</span>
+			</Menu.Trigger>
+			<Menu.Portal>
+				<Menu.Positioner side="bottom" align="end" sideOffset={6} className="z-50">
+					<Menu.Popup
+						className="min-w-[9rem] overflow-hidden rounded border border-border bg-background py-1 text-foreground outline-none shadow-sm"
+						data-testid="locale-switcher-menu"
 					>
-						{locale.toUpperCase()}
-					</button>
-				))}
-			</div>
-		</div>
+						{locales.map((locale) => (
+							<Menu.LinkItem
+								key={locale}
+								href={samePageLocaleHref({
+									pathname: location.pathname,
+									search: location.searchStr,
+									hash: location.hash ? `#${location.hash}` : "",
+									locale,
+								})}
+								hrefLang={locale}
+								aria-current={locale === current ? "true" : undefined}
+								onClick={() => {
+									writeLocaleCookie(locale);
+								}}
+								className={cn(
+									"block px-3 py-1.5 text-sm outline-none data-highlighted:bg-muted",
+									locale === current && "font-medium",
+								)}
+								data-testid={`locale-link-${locale}`}
+								data-locale-cookie={LOCALE_COOKIE}
+							>
+								{LABEL[locale]?.() ?? locale}
+							</Menu.LinkItem>
+						))}
+					</Menu.Popup>
+				</Menu.Positioner>
+			</Menu.Portal>
+		</Menu.Root>
 	);
 }
+
+export default LocaleSwitcher;
