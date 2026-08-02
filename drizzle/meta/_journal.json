@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1754064000000,
+      "tag": "0000_create-app-role",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1754064000001,
+      "tag": "0001_add-rls-context",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1754064000002,
+      "tag": "0002_platform_tables",
+      "breakpoints": true
+    }
+  ]
+}

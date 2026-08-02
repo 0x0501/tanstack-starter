@@ -1,19 +1,25 @@
-import { config } from 'dotenv'
-import { defineConfig } from 'drizzle-kit'
+import { config } from "dotenv";
+import { defineConfig } from "drizzle-kit";
 
-config({ path: ['.env'] })
+// Local env: `.env` then optional overrides in `.env.local` (both gitignored).
+// Mirrors Docker defaults from `.env.docker` / `.env.example`.
+config({ path: ".env" });
+config({ path: ".env.local", override: true });
+
+const migrationUrl = process.env.DATABASE_MIGRATION_URL;
+
+if (!migrationUrl) {
+	console.warn(
+		"[drizzle.config] DATABASE_MIGRATION_URL is unset. " +
+			"Copy .env.example → .env and run `bun run db:up` for local Postgres.",
+	);
+}
 
 export default defineConfig({
-  out: './drizzle',
-  schema: './src/db/schema.ts',
-  dialect: 'sqlite',
-  // D1 over HTTP: the sqlite dialect needs this driver, otherwise drizzle-kit
-  // expects a local `url`. Credentials come from env so `db:push`/`db:migrate`
-  // work against the remote D1 (db:generate needs none).
-  driver: 'd1-http',
-  dbCredentials: {
-    accountId: process.env.CLOUDFLARE_ACCOUNT_ID ?? '',
-    databaseId: process.env.CLOUDFLARE_DATABASE_ID ?? '',
-    token: process.env.CLOUDFLARE_D1_TOKEN ?? '',
-  },
-})
+	out: "./drizzle",
+	schema: "./src/db/schema.ts",
+	dialect: "postgresql",
+	...(migrationUrl ? { dbCredentials: { url: migrationUrl } } : {}),
+	verbose: true,
+	strict: true,
+});
