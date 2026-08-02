@@ -12,4 +12,4 @@ export const Route = createFileRoute(
 				oauthProviderOpenIdConfigMetadata(context.auth)(request),
 		},
 	},
-}); 
+});

@@ -1,100 +1,181 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { type FormEvent, useState } from "react";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
+import {
+	AuthDivider,
+	GithubButton,
+	PasskeyButton,
+} from "@/components/auth/social";
+import {
+	Turnstile,
+	type TurnstileHandle,
+} from "@/components/auth/turnstile";
+import {
+	AuthShell,
+	buttonClass,
+	Field,
+	inputClass,
+	linkClass,
+	mutedTextClass,
+	PageAlert,
+} from "@/components/shells";
 import { authClient } from "@/lib/auth-client";
+import { CAPTCHA_ENABLED } from "@/lib/captcha";
+import { GITHUB_OAUTH_ENABLED } from "@/lib/github";
+import { NOINDEX_META, pageTitle } from "@/lib/site";
+import * as m from "@/paraglide/messages";
+import { afterAuthTarget, localizedAuthPath } from "@/utils/auth-redirect";
 
-// General-purpose login page. It doubles as the oauthProvider `loginPage`: when
-// the OAuth flow redirects here it carries the signed authorization query, so
-// after login we resume `/oauth2/authorize`; on a plain visit we just go home.
 export const Route = createFileRoute("/sign-in")({
-	// Keep any signed authorization query intact in the URL.
-	validateSearch: (search: Record<string, unknown>) =>
-		search as { client_id?: string; redirect?: string },
-	component: RouteComponent,
+	// Pass-through search so signed OAuth queries survive login.
+	validateSearch: (search: Record<string, unknown>) => search,
+	beforeLoad: ({ context: { session } }) => {
+		if (session?.user) {
+			throw redirect({ to: "/dashboard" });
+		}
+	},
+	head: () => ({
+		meta: [...NOINDEX_META, { title: pageTitle(m.auth_sign_in_title()) }],
+	}),
+	component: SignInPage,
 });
 
-function afterSignIn(): void {
+function afterAuth(): void {
 	if (typeof window === "undefined") return;
-	const query = window.location.search.replace(/^\?/, "");
-	const params = new URLSearchParams(query);
-	if (params.has("client_id")) {
-		// Arrived mid OAuth-authorize → resume it, now authenticated.
-		window.location.href = `/api/auth/oauth2/authorize?${query}`;
-	} else {
-		window.location.href = params.get("redirect") || "/";
-	}
+	window.location.href = afterAuthTarget();
 }
 
-function RouteComponent() {
-	const { client_id } = Route.useSearch();
+function SignInPage() {
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
-	const [pending, setPending] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [pending, setPending] = useState(false);
+	const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+	const turnstile = useRef<TurnstileHandle>(null);
 
-	async function onSubmit(e: FormEvent) {
+	// Passkey conditional UI: browser may offer a saved passkey from autofill.
+	useEffect(() => {
+		let cancelled = false;
+		const check =
+			window.PublicKeyCredential?.isConditionalMediationAvailable?.();
+		if (!check) return;
+		void check.then((available) => {
+			if (!available || cancelled) return;
+			void authClient.signIn.passkey({ autoFill: true }).then((result) => {
+				if (!cancelled && !result.error) afterAuth();
+			});
+		});
+		return () => {
+			cancelled = true;
+		};
+	}, []);
+
+	async function onSubmit(e: React.FormEvent) {
 		e.preventDefault();
-		setError(null);
 		setPending(true);
-		const { error } = await authClient.signIn.email({ email, password });
-		if (error) {
-			setError(error.message ?? "Invalid email or password.");
+		setError(null);
+		if (CAPTCHA_ENABLED && !captchaToken) {
+			setError(m.auth_captcha_required());
 			setPending(false);
 			return;
 		}
-		afterSignIn();
+		const { error: err } = await authClient.signIn.email({
+			email,
+			password,
+			// Locale-aware so verification / error returns stay on the same language URL.
+			callbackURL: localizedAuthPath("/sign-in"),
+			fetchOptions: {
+				headers: { "x-captcha-response": captchaToken ?? "" },
+			},
+		});
+		turnstile.current?.reset();
+		setPending(false);
+		if (err) {
+			setError(err.message ?? m.auth_sign_in_failed());
+			return;
+		}
+		afterAuth();
 	}
 
 	return (
-		<div className="flex min-h-screen items-center justify-center p-8">
-			<form
-				onSubmit={onSubmit}
-				className="w-full max-w-sm border border-neutral-300 p-8 dark:border-neutral-700"
-			>
-				<h1 className="text-xl font-semibold text-neutral-900 dark:text-neutral-50">
-					Sign in
-				</h1>
-				{client_id && (
-					<p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
-						to continue to <span className="font-medium">{client_id}</span>.
-					</p>
-				)}
-
-				<label className="mt-6 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-					Email
+		<AuthShell title={m.auth_sign_in_title()}>
+			<form onSubmit={onSubmit}>
+				<Field label={m.field_email()}>
 					<input
+						className={inputClass}
 						type="email"
+						autoComplete="username webauthn"
 						required
 						value={email}
-						onChange={(e) => setEmail(e.target.value)}
-						autoComplete="email"
-						className="mt-1 h-9 w-full border border-neutral-300 bg-white px-3 text-sm text-neutral-900 outline-none focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-50 dark:focus:border-neutral-50"
+						onChange={(ev) => setEmail(ev.target.value)}
 					/>
-				</label>
-
-				<label className="mt-4 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-					Password
+				</Field>
+				<Field label={m.field_password()}>
 					<input
+						className={inputClass}
 						type="password"
+						autoComplete="current-password"
 						required
 						value={password}
-						onChange={(e) => setPassword(e.target.value)}
-						autoComplete="current-password"
-						className="mt-1 h-9 w-full border border-neutral-300 bg-white px-3 text-sm text-neutral-900 outline-none focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-50 dark:focus:border-neutral-50"
+						onChange={(ev) => setPassword(ev.target.value)}
 					/>
-				</label>
-
-				{error && (
-					<p className="mt-4 text-sm text-red-600 dark:text-red-400">{error}</p>
-				)}
-
+				</Field>
+				<Turnstile ref={turnstile} onToken={setCaptchaToken} />
+				{error ? <PageAlert>{error}</PageAlert> : null}
 				<button
 					type="submit"
-					disabled={pending}
-					className="mt-6 h-9 w-full bg-neutral-900 px-4 text-sm font-medium text-neutral-50 transition-colors hover:bg-neutral-800 disabled:opacity-50 dark:bg-neutral-50 dark:text-neutral-900 dark:hover:bg-neutral-200"
+					className={buttonClass}
+					disabled={pending || (CAPTCHA_ENABLED && !captchaToken)}
 				>
-					{pending ? "Signing in…" : "Sign in"}
+					{pending ? m.auth_signing_in() : m.nav_sign_in()}
 				</button>
 			</form>
-		</div>
+
+			<>
+				<AuthDivider />
+				<div className="mt-4 flex flex-col gap-2">
+					{GITHUB_OAUTH_ENABLED ? (
+						<GithubButton label={m.auth_continue_github()} />
+					) : null}
+					<PasskeyButton
+						label={m.auth_use_passkey()}
+						disabled={pending}
+						onClick={() => {
+							setPending(true);
+							setError(null);
+							void authClient.signIn
+								.passkey()
+								.then(({ error: err }) => {
+									if (err) {
+										setError(err.message ?? m.auth_passkey_failed());
+										return;
+									}
+									afterAuth();
+								})
+								.catch((err) => {
+									setError(
+										err instanceof Error
+											? err.message
+											: m.auth_passkey_failed(),
+									);
+								})
+								.finally(() => {
+									setPending(false);
+								});
+						}}
+					/>
+				</div>
+			</>
+
+			<p className={`mt-4 text-center ${mutedTextClass}`}>
+				{m.auth_no_account()}{" "}
+				<Link to="/sign-up" className={linkClass}>
+					{m.nav_sign_up()}
+				</Link>
+				{" · "}
+				<Link to="/forgot-password" className={linkClass}>
+					{m.auth_forgot_title()}
+				</Link>
+			</p>
+		</AuthShell>
 	);
 }

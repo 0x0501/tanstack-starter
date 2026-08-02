@@ -9,17 +9,62 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TwoFactorRouteImport } from './routes/two-factor'
+import { Route as SignUpRouteImport } from './routes/sign-up'
 import { Route as SignInRouteImport } from './routes/sign-in'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as DashboardRouteRouteImport } from './routes/dashboard/route'
+import { Route as AdminRouteRouteImport } from './routes/admin/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as OauthConsentRouteImport } from './routes/oauth/consent'
-import { Route as DotwellKnownOauthProtectedResourceRouteImport } from './routes/[.]well-known/oauth-protected-resource'
+import { Route as DashboardAccountRouteImport } from './routes/dashboard/account'
+import { Route as AdminUsersRouteImport } from './routes/admin/users'
+import { Route as AdminOauthAppsRouteImport } from './routes/admin/oauth-apps'
+import { Route as AdminAuditRouteImport } from './routes/admin/audit'
+import { Route as DotwellKnownOauthProtectedResourceIndexRouteImport } from './routes/[.]well-known/oauth-protected-resource/index'
+import { Route as ApiWebhooksStripeRouteImport } from './routes/api/webhooks/stripe'
+import { Route as ApiWebhooksNowpaymentsRouteImport } from './routes/api/webhooks/nowpayments'
+import { Route as ApiWebhooksCreemRouteImport } from './routes/api/webhooks/creem'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiAuthDotwellKnownOpenidConfigurationRouteImport } from './routes/api/auth/[.]well-known/openid-configuration'
-import { Route as DotwellKnownOauthAuthorizationServerApiAuthRouteImport } from './routes/[.]well-known/oauth-authorization-server/api/auth'
+import { Route as ApiAuthDotwellKnownOauthAuthorizationServerRouteImport } from './routes/api/auth/[.]well-known/oauth-authorization-server'
 
+const TwoFactorRoute = TwoFactorRouteImport.update({
+  id: '/two-factor',
+  path: '/two-factor',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignUpRoute = SignUpRouteImport.update({
+  id: '/sign-up',
+  path: '/sign-up',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SignInRoute = SignInRouteImport.update({
   id: '/sign-in',
   path: '/sign-in',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRouteRoute = DashboardRouteRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRouteRoute = AdminRouteRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -27,17 +72,62 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardIndexRoute = DashboardIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => DashboardRouteRoute,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
 const OauthConsentRoute = OauthConsentRouteImport.update({
   id: '/oauth/consent',
   path: '/oauth/consent',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DotwellKnownOauthProtectedResourceRoute =
-  DotwellKnownOauthProtectedResourceRouteImport.update({
-    id: '/.well-known/oauth-protected-resource',
-    path: '/.well-known/oauth-protected-resource',
+const DashboardAccountRoute = DashboardAccountRouteImport.update({
+  id: '/account',
+  path: '/account',
+  getParentRoute: () => DashboardRouteRoute,
+} as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminOauthAppsRoute = AdminOauthAppsRouteImport.update({
+  id: '/oauth-apps',
+  path: '/oauth-apps',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminAuditRoute = AdminAuditRouteImport.update({
+  id: '/audit',
+  path: '/audit',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const DotwellKnownOauthProtectedResourceIndexRoute =
+  DotwellKnownOauthProtectedResourceIndexRouteImport.update({
+    id: '/.well-known/oauth-protected-resource/',
+    path: '/.well-known/oauth-protected-resource/',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiWebhooksStripeRoute = ApiWebhooksStripeRouteImport.update({
+  id: '/api/webhooks/stripe',
+  path: '/api/webhooks/stripe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWebhooksNowpaymentsRoute = ApiWebhooksNowpaymentsRouteImport.update({
+  id: '/api/webhooks/nowpayments',
+  path: '/api/webhooks/nowpayments',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWebhooksCreemRoute = ApiWebhooksCreemRouteImport.update({
+  id: '/api/webhooks/creem',
+  path: '/api/webhooks/creem',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -49,88 +139,225 @@ const ApiAuthDotwellKnownOpenidConfigurationRoute =
     path: '/api/auth/.well-known/openid-configuration',
     getParentRoute: () => rootRouteImport,
   } as any)
-const DotwellKnownOauthAuthorizationServerApiAuthRoute =
-  DotwellKnownOauthAuthorizationServerApiAuthRouteImport.update({
-    id: '/.well-known/oauth-authorization-server/api/auth',
-    path: '/.well-known/oauth-authorization-server/api/auth',
+const ApiAuthDotwellKnownOauthAuthorizationServerRoute =
+  ApiAuthDotwellKnownOauthAuthorizationServerRouteImport.update({
+    id: '/api/auth/.well-known/oauth-authorization-server',
+    path: '/api/auth/.well-known/oauth-authorization-server',
     getParentRoute: () => rootRouteImport,
   } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteRouteWithChildren
+  '/dashboard': typeof DashboardRouteRouteWithChildren
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/sign-in': typeof SignInRoute
-  '/.well-known/oauth-protected-resource': typeof DotwellKnownOauthProtectedResourceRoute
+  '/sign-up': typeof SignUpRoute
+  '/two-factor': typeof TwoFactorRoute
+  '/admin/audit': typeof AdminAuditRoute
+  '/admin/oauth-apps': typeof AdminOauthAppsRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/dashboard/account': typeof DashboardAccountRoute
   '/oauth/consent': typeof OauthConsentRoute
+  '/admin/': typeof AdminIndexRoute
+  '/dashboard/': typeof DashboardIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/.well-known/oauth-authorization-server/api/auth': typeof DotwellKnownOauthAuthorizationServerApiAuthRoute
+  '/api/webhooks/creem': typeof ApiWebhooksCreemRoute
+  '/api/webhooks/nowpayments': typeof ApiWebhooksNowpaymentsRoute
+  '/api/webhooks/stripe': typeof ApiWebhooksStripeRoute
+  '/.well-known/oauth-protected-resource/': typeof DotwellKnownOauthProtectedResourceIndexRoute
+  '/api/auth/.well-known/oauth-authorization-server': typeof ApiAuthDotwellKnownOauthAuthorizationServerRoute
   '/api/auth/.well-known/openid-configuration': typeof ApiAuthDotwellKnownOpenidConfigurationRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/sign-in': typeof SignInRoute
-  '/.well-known/oauth-protected-resource': typeof DotwellKnownOauthProtectedResourceRoute
+  '/sign-up': typeof SignUpRoute
+  '/two-factor': typeof TwoFactorRoute
+  '/admin/audit': typeof AdminAuditRoute
+  '/admin/oauth-apps': typeof AdminOauthAppsRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/dashboard/account': typeof DashboardAccountRoute
   '/oauth/consent': typeof OauthConsentRoute
+  '/admin': typeof AdminIndexRoute
+  '/dashboard': typeof DashboardIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/.well-known/oauth-authorization-server/api/auth': typeof DotwellKnownOauthAuthorizationServerApiAuthRoute
+  '/api/webhooks/creem': typeof ApiWebhooksCreemRoute
+  '/api/webhooks/nowpayments': typeof ApiWebhooksNowpaymentsRoute
+  '/api/webhooks/stripe': typeof ApiWebhooksStripeRoute
+  '/.well-known/oauth-protected-resource': typeof DotwellKnownOauthProtectedResourceIndexRoute
+  '/api/auth/.well-known/oauth-authorization-server': typeof ApiAuthDotwellKnownOauthAuthorizationServerRoute
   '/api/auth/.well-known/openid-configuration': typeof ApiAuthDotwellKnownOpenidConfigurationRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteRouteWithChildren
+  '/dashboard': typeof DashboardRouteRouteWithChildren
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/sign-in': typeof SignInRoute
-  '/.well-known/oauth-protected-resource': typeof DotwellKnownOauthProtectedResourceRoute
+  '/sign-up': typeof SignUpRoute
+  '/two-factor': typeof TwoFactorRoute
+  '/admin/audit': typeof AdminAuditRoute
+  '/admin/oauth-apps': typeof AdminOauthAppsRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/dashboard/account': typeof DashboardAccountRoute
   '/oauth/consent': typeof OauthConsentRoute
+  '/admin/': typeof AdminIndexRoute
+  '/dashboard/': typeof DashboardIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/.well-known/oauth-authorization-server/api/auth': typeof DotwellKnownOauthAuthorizationServerApiAuthRoute
+  '/api/webhooks/creem': typeof ApiWebhooksCreemRoute
+  '/api/webhooks/nowpayments': typeof ApiWebhooksNowpaymentsRoute
+  '/api/webhooks/stripe': typeof ApiWebhooksStripeRoute
+  '/.well-known/oauth-protected-resource/': typeof DotwellKnownOauthProtectedResourceIndexRoute
+  '/api/auth/.well-known/oauth-authorization-server': typeof ApiAuthDotwellKnownOauthAuthorizationServerRoute
   '/api/auth/.well-known/openid-configuration': typeof ApiAuthDotwellKnownOpenidConfigurationRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
+    | '/dashboard'
+    | '/forgot-password'
+    | '/reset-password'
     | '/sign-in'
-    | '/.well-known/oauth-protected-resource'
+    | '/sign-up'
+    | '/two-factor'
+    | '/admin/audit'
+    | '/admin/oauth-apps'
+    | '/admin/users'
+    | '/dashboard/account'
     | '/oauth/consent'
+    | '/admin/'
+    | '/dashboard/'
     | '/api/auth/$'
-    | '/.well-known/oauth-authorization-server/api/auth'
+    | '/api/webhooks/creem'
+    | '/api/webhooks/nowpayments'
+    | '/api/webhooks/stripe'
+    | '/.well-known/oauth-protected-resource/'
+    | '/api/auth/.well-known/oauth-authorization-server'
     | '/api/auth/.well-known/openid-configuration'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/forgot-password'
+    | '/reset-password'
     | '/sign-in'
-    | '/.well-known/oauth-protected-resource'
+    | '/sign-up'
+    | '/two-factor'
+    | '/admin/audit'
+    | '/admin/oauth-apps'
+    | '/admin/users'
+    | '/dashboard/account'
     | '/oauth/consent'
+    | '/admin'
+    | '/dashboard'
     | '/api/auth/$'
-    | '/.well-known/oauth-authorization-server/api/auth'
+    | '/api/webhooks/creem'
+    | '/api/webhooks/nowpayments'
+    | '/api/webhooks/stripe'
+    | '/.well-known/oauth-protected-resource'
+    | '/api/auth/.well-known/oauth-authorization-server'
     | '/api/auth/.well-known/openid-configuration'
   id:
     | '__root__'
     | '/'
+    | '/admin'
+    | '/dashboard'
+    | '/forgot-password'
+    | '/reset-password'
     | '/sign-in'
-    | '/.well-known/oauth-protected-resource'
+    | '/sign-up'
+    | '/two-factor'
+    | '/admin/audit'
+    | '/admin/oauth-apps'
+    | '/admin/users'
+    | '/dashboard/account'
     | '/oauth/consent'
+    | '/admin/'
+    | '/dashboard/'
     | '/api/auth/$'
-    | '/.well-known/oauth-authorization-server/api/auth'
+    | '/api/webhooks/creem'
+    | '/api/webhooks/nowpayments'
+    | '/api/webhooks/stripe'
+    | '/.well-known/oauth-protected-resource/'
+    | '/api/auth/.well-known/oauth-authorization-server'
     | '/api/auth/.well-known/openid-configuration'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRouteRoute: typeof AdminRouteRouteWithChildren
+  DashboardRouteRoute: typeof DashboardRouteRouteWithChildren
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   SignInRoute: typeof SignInRoute
-  DotwellKnownOauthProtectedResourceRoute: typeof DotwellKnownOauthProtectedResourceRoute
+  SignUpRoute: typeof SignUpRoute
+  TwoFactorRoute: typeof TwoFactorRoute
   OauthConsentRoute: typeof OauthConsentRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
-  DotwellKnownOauthAuthorizationServerApiAuthRoute: typeof DotwellKnownOauthAuthorizationServerApiAuthRoute
+  ApiWebhooksCreemRoute: typeof ApiWebhooksCreemRoute
+  ApiWebhooksNowpaymentsRoute: typeof ApiWebhooksNowpaymentsRoute
+  ApiWebhooksStripeRoute: typeof ApiWebhooksStripeRoute
+  DotwellKnownOauthProtectedResourceIndexRoute: typeof DotwellKnownOauthProtectedResourceIndexRoute
+  ApiAuthDotwellKnownOauthAuthorizationServerRoute: typeof ApiAuthDotwellKnownOauthAuthorizationServerRoute
   ApiAuthDotwellKnownOpenidConfigurationRoute: typeof ApiAuthDotwellKnownOpenidConfigurationRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/two-factor': {
+      id: '/two-factor'
+      path: '/two-factor'
+      fullPath: '/two-factor'
+      preLoaderRoute: typeof TwoFactorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sign-up': {
+      id: '/sign-up'
+      path: '/sign-up'
+      fullPath: '/sign-up'
+      preLoaderRoute: typeof SignUpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sign-in': {
       id: '/sign-in'
       path: '/sign-in'
       fullPath: '/sign-in'
       preLoaderRoute: typeof SignInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -140,6 +367,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboard/': {
+      id: '/dashboard/'
+      path: '/'
+      fullPath: '/dashboard/'
+      preLoaderRoute: typeof DashboardIndexRouteImport
+      parentRoute: typeof DashboardRouteRoute
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
     '/oauth/consent': {
       id: '/oauth/consent'
       path: '/oauth/consent'
@@ -147,11 +388,60 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OauthConsentRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/.well-known/oauth-protected-resource': {
-      id: '/.well-known/oauth-protected-resource'
+    '/dashboard/account': {
+      id: '/dashboard/account'
+      path: '/account'
+      fullPath: '/dashboard/account'
+      preLoaderRoute: typeof DashboardAccountRouteImport
+      parentRoute: typeof DashboardRouteRoute
+    }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/oauth-apps': {
+      id: '/admin/oauth-apps'
+      path: '/oauth-apps'
+      fullPath: '/admin/oauth-apps'
+      preLoaderRoute: typeof AdminOauthAppsRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/audit': {
+      id: '/admin/audit'
+      path: '/audit'
+      fullPath: '/admin/audit'
+      preLoaderRoute: typeof AdminAuditRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/.well-known/oauth-protected-resource/': {
+      id: '/.well-known/oauth-protected-resource/'
       path: '/.well-known/oauth-protected-resource'
-      fullPath: '/.well-known/oauth-protected-resource'
-      preLoaderRoute: typeof DotwellKnownOauthProtectedResourceRouteImport
+      fullPath: '/.well-known/oauth-protected-resource/'
+      preLoaderRoute: typeof DotwellKnownOauthProtectedResourceIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/webhooks/stripe': {
+      id: '/api/webhooks/stripe'
+      path: '/api/webhooks/stripe'
+      fullPath: '/api/webhooks/stripe'
+      preLoaderRoute: typeof ApiWebhooksStripeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/webhooks/nowpayments': {
+      id: '/api/webhooks/nowpayments'
+      path: '/api/webhooks/nowpayments'
+      fullPath: '/api/webhooks/nowpayments'
+      preLoaderRoute: typeof ApiWebhooksNowpaymentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/webhooks/creem': {
+      id: '/api/webhooks/creem'
+      path: '/api/webhooks/creem'
+      fullPath: '/api/webhooks/creem'
+      preLoaderRoute: typeof ApiWebhooksCreemRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/auth/$': {
@@ -168,25 +458,66 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthDotwellKnownOpenidConfigurationRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/.well-known/oauth-authorization-server/api/auth': {
-      id: '/.well-known/oauth-authorization-server/api/auth'
-      path: '/.well-known/oauth-authorization-server/api/auth'
-      fullPath: '/.well-known/oauth-authorization-server/api/auth'
-      preLoaderRoute: typeof DotwellKnownOauthAuthorizationServerApiAuthRouteImport
+    '/api/auth/.well-known/oauth-authorization-server': {
+      id: '/api/auth/.well-known/oauth-authorization-server'
+      path: '/api/auth/.well-known/oauth-authorization-server'
+      fullPath: '/api/auth/.well-known/oauth-authorization-server'
+      preLoaderRoute: typeof ApiAuthDotwellKnownOauthAuthorizationServerRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
 }
 
+interface AdminRouteRouteChildren {
+  AdminAuditRoute: typeof AdminAuditRoute
+  AdminOauthAppsRoute: typeof AdminOauthAppsRoute
+  AdminUsersRoute: typeof AdminUsersRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteRouteChildren: AdminRouteRouteChildren = {
+  AdminAuditRoute: AdminAuditRoute,
+  AdminOauthAppsRoute: AdminOauthAppsRoute,
+  AdminUsersRoute: AdminUsersRoute,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(
+  AdminRouteRouteChildren,
+)
+
+interface DashboardRouteRouteChildren {
+  DashboardAccountRoute: typeof DashboardAccountRoute
+  DashboardIndexRoute: typeof DashboardIndexRoute
+}
+
+const DashboardRouteRouteChildren: DashboardRouteRouteChildren = {
+  DashboardAccountRoute: DashboardAccountRoute,
+  DashboardIndexRoute: DashboardIndexRoute,
+}
+
+const DashboardRouteRouteWithChildren = DashboardRouteRoute._addFileChildren(
+  DashboardRouteRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRouteRoute: AdminRouteRouteWithChildren,
+  DashboardRouteRoute: DashboardRouteRouteWithChildren,
+  ForgotPasswordRoute: ForgotPasswordRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   SignInRoute: SignInRoute,
-  DotwellKnownOauthProtectedResourceRoute:
-    DotwellKnownOauthProtectedResourceRoute,
+  SignUpRoute: SignUpRoute,
+  TwoFactorRoute: TwoFactorRoute,
   OauthConsentRoute: OauthConsentRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
-  DotwellKnownOauthAuthorizationServerApiAuthRoute:
-    DotwellKnownOauthAuthorizationServerApiAuthRoute,
+  ApiWebhooksCreemRoute: ApiWebhooksCreemRoute,
+  ApiWebhooksNowpaymentsRoute: ApiWebhooksNowpaymentsRoute,
+  ApiWebhooksStripeRoute: ApiWebhooksStripeRoute,
+  DotwellKnownOauthProtectedResourceIndexRoute:
+    DotwellKnownOauthProtectedResourceIndexRoute,
+  ApiAuthDotwellKnownOauthAuthorizationServerRoute:
+    ApiAuthDotwellKnownOauthAuthorizationServerRoute,
   ApiAuthDotwellKnownOpenidConfigurationRoute:
     ApiAuthDotwellKnownOpenidConfigurationRoute,
 }
@@ -195,10 +526,11 @@ export const routeTree = rootRouteImport
   ._addFileTypes<FileRouteTypes>()
 
 import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
+import type { startInstance } from './start.ts'
 declare module '@tanstack/react-start' {
   interface Register {
     ssr: true
     router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
   }
 }
