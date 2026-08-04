@@ -52,9 +52,7 @@ describe("a guarded query refused mid-session", () => {
 
 		await runQuery(refuses(401));
 
-		expect(goToSignIn).toHaveBeenCalledWith(
-			"/dashboard/account?tab=security",
-		);
+		expect(goToSignIn).toHaveBeenCalledWith("/dashboard/account?tab=security");
 	});
 
 	it("never caches the refusal as data", async () => {

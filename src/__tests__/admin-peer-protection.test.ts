@@ -14,12 +14,12 @@ import {
 	assertNotLastAdmin,
 	isAdminRole,
 } from "@/services/admin-security";
-import { createTestDatabase } from "./test-db";
+import { createTestDatabase, hasTestDatabase } from "./test-db";
 
 const ACTOR = "actor-admin";
 const TARGET = "target";
 
-describe("administrator peer protection", () => {
+describe.skipIf(!hasTestDatabase)("administrator peer protection", () => {
 	it("lets an administrator ban, demote and revoke an ordinary user", () => {
 		const act = (extra: Record<string, unknown>) =>
 			assertAdminMayActOn({
@@ -131,7 +131,7 @@ const seed = (db: AppDatabase, rows: Array<[string, string | null, boolean]>) =>
 		})),
 	);
 
-describe("the last usable administrator", () => {
+describe.skipIf(!hasTestDatabase)("the last usable administrator", () => {
 	it("counts a superadmin as an administrator", async () => {
 		const db = await makeUserTable();
 		await seed(db, [

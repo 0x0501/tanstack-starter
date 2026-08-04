@@ -23,7 +23,7 @@ import {
 	insertPasskey,
 	PASSKEY_DDL,
 } from "./auth-harness";
-import { createTestDatabase } from "./test-db";
+import { createTestDatabase, hasTestDatabase } from "./test-db";
 
 const BASE = "http://localhost:3000";
 const PW = "Passw0rd!";
@@ -100,7 +100,7 @@ const post = (
 		}),
 	);
 
-describe("the admin plugin's HTTP surface", () => {
+describe.skipIf(!hasTestDatabase)("the admin plugin's HTTP surface", () => {
 	it("does not let an administrator demote a superadmin", async () => {
 		const { auth, db } = await makeAuth();
 		const actor = await signedInAs(auth, db, "admin@test.local", "admin");
@@ -186,7 +186,7 @@ const PUBLIC_BY_DESIGN = new Set([
 	"/two-factor/verify-backup-code",
 ]);
 
-describe("the disabled-path list", () => {
+describe.skipIf(!hasTestDatabase)("the disabled-path list", () => {
 	it("declares every route of every plugin whose surface it controls", async () => {
 		// Measured, not assumed: diff mounted routes with vs without each plugin.
 		const db = await createTestDatabase(AUTH_DDL);
@@ -250,59 +250,62 @@ describe("the disabled-path list", () => {
 	});
 });
 
-describe("credential-mutating routes the server fns guard", () => {
-	it("POST /change-password is off — OTP flow with eviction is the only path", async () => {
-		const { auth } = await makeAuth();
-		const signedUp = await auth.api.signUpEmail({
-			body: { email: "pw@example.com", password: PW, name: "PW" },
-			returnHeaders: true,
+describe.skipIf(!hasTestDatabase)(
+	"credential-mutating routes the server fns guard",
+	() => {
+		it("POST /change-password is off — OTP flow with eviction is the only path", async () => {
+			const { auth } = await makeAuth();
+			const signedUp = await auth.api.signUpEmail({
+				body: { email: "pw@example.com", password: PW, name: "PW" },
+				returnHeaders: true,
+			});
+
+			const res = await post(
+				auth,
+				"/change-password",
+				{ currentPassword: PW, newPassword: "Changed1!" },
+				cookieHeaders(signedUp.headers),
+			);
+
+			expect(res.status).toBe(404);
+			await expect(
+				auth.api.signInEmail({
+					body: { email: "pw@example.com", password: PW },
+				}),
+			).resolves.toBeTruthy();
 		});
 
-		const res = await post(
-			auth,
-			"/change-password",
-			{ currentPassword: PW, newPassword: "Changed1!" },
-			cookieHeaders(signedUp.headers),
-		);
+		it("POST /passkey/delete-passkey is off — removal stays fresh-gated", async () => {
+			const db = await createTestDatabase(AUTH_DDL + PASSKEY_DDL);
+			const auth = betterAuth({
+				baseURL: BASE,
+				secret: "admin-http-surface-test-secret",
+				telemetry: { enabled: false },
+				database: drizzleAdapter(db, { provider: "pg" }),
+				emailAndPassword: { enabled: true },
+				disabledPaths: [...DISABLED_AUTH_PATHS],
+				plugins: [passkey({ rpID: "localhost", rpName: "Starter" })],
+			});
+			const signedUp = await auth.api.signUpEmail({
+				body: { email: "pk@example.com", password: PW, name: "PK" },
+				returnHeaders: true,
+			});
+			const pkId = await insertPasskey(db, signedUp.response.user.id);
 
-		expect(res.status).toBe(404);
-		await expect(
-			auth.api.signInEmail({
-				body: { email: "pw@example.com", password: PW },
-			}),
-		).resolves.toBeTruthy();
-	});
+			const res = await auth.handler(
+				new Request(`${BASE}/api/auth/passkey/delete-passkey`, {
+					method: "POST",
+					headers: {
+						"content-type": "application/json",
+						cookie: cookieHeaders(signedUp.headers).get("cookie") ?? "",
+					},
+					body: JSON.stringify({ id: pkId }),
+				}),
+			);
 
-	it("POST /passkey/delete-passkey is off — removal stays fresh-gated", async () => {
-		const db = await createTestDatabase(AUTH_DDL + PASSKEY_DDL);
-		const auth = betterAuth({
-			baseURL: BASE,
-			secret: "admin-http-surface-test-secret",
-			telemetry: { enabled: false },
-			database: drizzleAdapter(db, { provider: "pg" }),
-			emailAndPassword: { enabled: true },
-			disabledPaths: [...DISABLED_AUTH_PATHS],
-			plugins: [passkey({ rpID: "localhost", rpName: "Starter" })],
+			expect(res.status).toBe(404);
+			const { passkey: pkTable } = await import("@/db/auth.schema");
+			expect(await db.select().from(pkTable)).toHaveLength(1);
 		});
-		const signedUp = await auth.api.signUpEmail({
-			body: { email: "pk@example.com", password: PW, name: "PK" },
-			returnHeaders: true,
-		});
-		const pkId = await insertPasskey(db, signedUp.response.user.id);
-
-		const res = await auth.handler(
-			new Request(`${BASE}/api/auth/passkey/delete-passkey`, {
-				method: "POST",
-				headers: {
-					"content-type": "application/json",
-					cookie: cookieHeaders(signedUp.headers).get("cookie") ?? "",
-				},
-				body: JSON.stringify({ id: pkId }),
-			}),
-		);
-
-		expect(res.status).toBe(404);
-		const { passkey: pkTable } = await import("@/db/auth.schema");
-		expect(await db.select().from(pkTable)).toHaveLength(1);
-	});
-});
+	},
+);
