@@ -28,13 +28,15 @@ import {
 	confirmPasswordChange,
 	disableTwoFactor,
 	getSecurityOverview,
-	listSessions,
 	removePasskey,
 	requestPasswordOtp,
 	requestReauthCode,
 	revokeOtherSessions,
 } from "@/server/account-security";
 import { accountSecurityErrorMessage } from "@/utils/auth-errors";
+
+/** One key for the page: profile, security, passkeys and sessions load together. */
+const SECURITY_OVERVIEW_KEY = ["security-overview"] as const;
 
 export const Route = createFileRoute("/dashboard/account")({
 	component: AccountPage,
@@ -45,12 +47,8 @@ function AccountPage() {
 	const { session } = Route.useRouteContext();
 	const qc = useQueryClient();
 	const overview = useQuery({
-		queryKey: ["security-overview"],
+		queryKey: SECURITY_OVERVIEW_KEY,
 		queryFn: () => getSecurityOverview(),
-	});
-	const sessions = useQuery({
-		queryKey: ["sessions"],
-		queryFn: () => listSessions(),
 	});
 
 	const sessionLocale =
@@ -65,8 +63,7 @@ function AccountPage() {
 	const [factorCode, setFactorCode] = useState("");
 
 	const invalidate = () => {
-		void qc.invalidateQueries({ queryKey: ["security-overview"] });
-		void qc.invalidateQueries({ queryKey: ["sessions"] });
+		void qc.invalidateQueries({ queryKey: SECURITY_OVERVIEW_KEY });
 	};
 
 	async function saveProfile(e: React.FormEvent) {
@@ -397,9 +394,9 @@ function AccountPage() {
 					>
 						{m.account_revoke_other_sessions()}
 					</button>
-					{sessions.data ? (
+					{overview.data?.sessions ? (
 						<ul className="space-y-1 text-xs text-muted-foreground">
-							{sessions.data.map((s) => (
+							{overview.data.sessions.map((s) => (
 								<li key={s.id}>
 									{s.isCurrent ? `${m.account_session_current()} · ` : ""}
 									{s.createdAt}
