@@ -33,9 +33,7 @@ describe("paraglide URL contract", () => {
 		expect(localizeHref("/sign-in", { locale: "en" })).toBe("/sign-in");
 		expect(localizeHref("/", { locale: "en" })).toBe("/");
 		expect(localizeHref("/dashboard", { locale: "en" })).toBe("/dashboard");
-		expect(localizeHref("/admin/users", { locale: "en" })).toBe(
-			"/admin/users",
-		);
+		expect(localizeHref("/admin/users", { locale: "en" })).toBe("/admin/users");
 	});
 
 	it("prefixes German for public, auth, dashboard, and admin", () => {
@@ -45,9 +43,7 @@ describe("paraglide URL contract", () => {
 		expect(localizeHref("/oauth/consent", { locale: "de" })).toBe(
 			"/de/oauth/consent",
 		);
-		expect(localizeHref("/dashboard", { locale: "de" })).toBe(
-			"/de/dashboard",
-		);
+		expect(localizeHref("/dashboard", { locale: "de" })).toBe("/de/dashboard");
 		expect(localizeHref("/dashboard/account", { locale: "de" })).toBe(
 			"/de/dashboard/account",
 		);
@@ -77,9 +73,7 @@ describe("paraglide URL contract", () => {
 		expect(deLocalizeHref("/de/sign-in")).toBe("/sign-in");
 		expect(deLocalizeHref("/de/")).toBe("/");
 		expect(deLocalizeHref("/de/dashboard")).toBe("/dashboard");
-		expect(deLocalizeHref("/de/dashboard/account")).toBe(
-			"/dashboard/account",
-		);
+		expect(deLocalizeHref("/de/dashboard/account")).toBe("/dashboard/account");
 		expect(deLocalizeHref("/de/admin/users")).toBe("/admin/users");
 		expect(deLocalizeHref("/dashboard")).toBe("/dashboard");
 	});

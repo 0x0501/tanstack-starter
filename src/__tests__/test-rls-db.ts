@@ -4,6 +4,8 @@ import { afterEach, inject } from "vitest";
 import type { Database as AppDatabase } from "@/db";
 import * as schema from "@/db/schema";
 
+export { hasTestDatabase } from "./test-db";
+
 const pools: Pool[] = [];
 
 afterEach(async () => {

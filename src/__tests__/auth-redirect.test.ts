@@ -58,7 +58,11 @@ describe("afterAuthTarget", () => {
 	});
 
 	it("honors a safe redirect query", () => {
-		window.history.replaceState({}, "", "/sign-in?redirect=%2Fdashboard%2Faccount");
+		window.history.replaceState(
+			{},
+			"",
+			"/sign-in?redirect=%2Fdashboard%2Faccount",
+		);
 		expect(afterAuthTarget()).toBe("/dashboard/account");
 	});
 
