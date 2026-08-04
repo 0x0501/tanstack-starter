@@ -1,80 +1,74 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { createDB } from "@/db";
 import { withRlsService } from "@/db/helper";
 import { env } from "@/env";
-import { verifyStripeSignature } from "@/services/payments-verify";
-import { markPurchasePaid } from "@/services/purchase";
-import { createPurchasePort } from "@/services/purchase-db";
-import { methodNotAllowed } from "@/utils/api-error";
-import {
-	BodyTooLargeError,
-	readTextCapped,
-	UnsupportedMediaTypeError,
-} from "@/utils/body-limit";
+import { webhookBodyLimitMiddleware } from "@/middlewares/body-limit";
+import { databaseMiddleware } from "@/middlewares/database";
+import { handleStripeWebhook } from "@/services/stripe";
+import { APIError, methodNotAllowed } from "@/utils/api-error";
 
-const MAX_BODY = 64 * 1024;
-
+// Stripe Checkout webhook: a thin shell over the framework-agnostic handler.
+// Fulfillment runs under service RLS context. HTTP contract: a valid signature
+// answers 200 for every mapped outcome so Stripe stops retrying a delivered
+// event; a bad or missing signature answers 400 with no effect; a genuine
+// processing failure throws and answers 5xx so Stripe retries — that retry is
+// what makes the purchase-paid hook exactly-once.
 export const Route = createFileRoute("/api/webhooks/stripe")({
 	server: {
-		handlers: {
-			GET: () => methodNotAllowed("POST"),
-			POST: async ({ request }) => {
-				if (!env.STRIPE_WEBHOOK_SECRET) {
-					return new Response("Stripe not configured", { status: 503 });
-				}
-				let raw: string;
-				try {
-					raw = await readTextCapped(request, {
-						maxBytes: MAX_BODY,
-						requireJson: false,
-					});
-				} catch (e) {
-					if (e instanceof BodyTooLargeError) {
-						return new Response("Payload too large", { status: 413 });
-					}
-					if (e instanceof UnsupportedMediaTypeError) {
-						return new Response("Unsupported media type", { status: 415 });
-					}
-					throw e;
-				}
-				const ok = verifyStripeSignature(
-					raw,
-					request.headers.get("stripe-signature"),
-					env.STRIPE_WEBHOOK_SECRET,
-				);
-				if (!ok) return new Response("Invalid signature", { status: 400 });
+		handlers: ({ createHandlers }) =>
+			createHandlers({
+				// Answers a browser, which would otherwise get the SPA shell.
+				GET: { handler: () => methodNotAllowed("POST") },
+				POST: {
+					// Public and unauthenticated: the body is capped before anything
+					// reads or hashes it.
+					middleware: [databaseMiddleware, webhookBodyLimitMiddleware],
+					handler: async ({ request, context }) => {
+						const secret = env.STRIPE_WEBHOOK_SECRET;
+						if (!secret) {
+							return APIError({
+								status: 503,
+								error: "not_configured",
+								message: "Stripe is not configured.",
+							});
+						}
 
-				let event: {
-					type?: string;
-					data?: { object?: { id?: string; amount_total?: number } };
-				};
-				try {
-					event = JSON.parse(raw) as typeof event;
-				} catch {
-					return new Response("Invalid JSON", { status: 400 });
-				}
-				if (
-					event.type === "checkout.session.completed" &&
-					event.data?.object?.id
-				) {
-					const { env: cf } = await import("cloudflare:workers");
-					const db = createDB(cf.HYPERDRIVE);
-					const sessionId = event.data.object.id;
-					const amount = event.data.object.amount_total;
-					await withRlsService(db, async (tx) => {
-						const port = createPurchasePort(tx);
-						await markPurchasePaid(port, {
-							provider: "stripe",
-							externalId: sessionId,
-							reportedAmount: amount,
-						});
-					});
-				}
-				return new Response(JSON.stringify({ received: true }), {
-					status: 200,
-					headers: { "content-type": "application/json" },
-				});
-			},
-		},
+						const result = await withRlsService(context.db, (tx) =>
+							handleStripeWebhook(tx, {
+								rawBody: context.rawBody,
+								signature: request.headers.get("stripe-signature"),
+								secret,
+							}),
+						);
+
+						if (result === "invalid_signature") {
+							return APIError({
+								status: 400,
+								error: "invalid_signature",
+								message: "Signature verification failed.",
+							});
+						}
+						if (result === "invalid_payload") {
+							return APIError({
+								status: 400,
+								error: "invalid_payload",
+								message: "Request body is not valid JSON.",
+							});
+						}
+						if (result === "amount_mismatch") {
+							// The one branch designed to fail closed. It answers 200 so
+							// Stripe stops retrying, but it must not pass unnoticed.
+							console.error(
+								"[stripe] reported amount does not match the Purchase row — not fulfilled",
+							);
+						}
+						if (result === "unknown_order") {
+							console.error(
+								"[stripe] event references an unknown purchase — not fulfilled",
+							);
+						}
+						return Response.json({ result }, { status: 200 });
+					},
+				},
+			}),
 	},
 });

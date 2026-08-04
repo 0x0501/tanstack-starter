@@ -1,98 +1,62 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { createDB } from "@/db";
 import { withRlsService } from "@/db/helper";
 import { env } from "@/env";
-import { verifyNowPaymentsSignature } from "@/services/payments-verify";
-import { markPurchasePaid } from "@/services/purchase";
-import { createPurchasePort } from "@/services/purchase-db";
-import { methodNotAllowed } from "@/utils/api-error";
-import {
-	BodyTooLargeError,
-	readTextCapped,
-	UnsupportedMediaTypeError,
-} from "@/utils/body-limit";
+import { webhookBodyLimitMiddleware } from "@/middlewares/body-limit";
+import { databaseMiddleware } from "@/middlewares/database";
+import { handleNowPaymentsWebhook } from "@/services/nowpayments";
+import { APIError, methodNotAllowed } from "@/utils/api-error";
 
-const MAX_BODY = 64 * 1024;
-
-/** Underpaid invoices must not fulfill as paid. */
-const PAID_STATUSES = new Set(["finished", "confirmed"]);
-
+// NowPayments IPN callback: a thin shell over the framework-agnostic handler.
+// Fulfillment runs under service RLS context. HTTP contract: a valid signature
+// answers 200 for every mapped outcome so NowPayments stops retrying a
+// delivered notification; a bad or missing signature answers 400 with no
+// effect; a genuine processing failure throws and answers 5xx so NowPayments
+// retries — that retry is what makes the purchase-paid hook exactly-once.
 export const Route = createFileRoute("/api/webhooks/nowpayments")({
 	server: {
-		handlers: {
-			GET: () => methodNotAllowed("POST"),
-			POST: async ({ request }) => {
-				if (!env.NOW_PAYMENTS_IPN_KEY) {
-					return new Response("NowPayments not configured", { status: 503 });
-				}
-				let raw: string;
-				try {
-					raw = await readTextCapped(request, {
-						maxBytes: MAX_BODY,
-						requireJson: true,
-					});
-				} catch (e) {
-					if (e instanceof BodyTooLargeError) {
-						return new Response("Payload too large", { status: 413 });
-					}
-					if (e instanceof UnsupportedMediaTypeError) {
-						return new Response("Unsupported media type", { status: 415 });
-					}
-					throw e;
-				}
-				const ok = verifyNowPaymentsSignature(
-					raw,
-					request.headers.get("x-nowpayments-sig"),
-					env.NOW_PAYMENTS_IPN_KEY,
-				);
-				if (!ok) return new Response("Invalid signature", { status: 400 });
+		handlers: ({ createHandlers }) =>
+			createHandlers({
+				// Answers a browser, which would otherwise get the SPA shell.
+				GET: { handler: () => methodNotAllowed("POST") },
+				POST: {
+					// Public and unauthenticated: the body is capped before anything
+					// reads or hashes it.
+					middleware: [databaseMiddleware, webhookBodyLimitMiddleware],
+					handler: async ({ request, context }) => {
+						const ipnKey = env.NOW_PAYMENTS_IPN_KEY;
+						if (!ipnKey) {
+							return APIError({
+								status: 503,
+								error: "not_configured",
+								message: "NowPayments is not configured.",
+							});
+						}
 
-				let payload: {
-					order_id?: string;
-					payment_status?: string;
-					actually_paid?: number;
-					price_amount?: number;
-				};
-				try {
-					payload = JSON.parse(raw) as typeof payload;
-				} catch {
-					return new Response("Invalid JSON", { status: 400 });
-				}
+						const result = await withRlsService(context.db, (tx) =>
+							handleNowPaymentsWebhook(tx, {
+								rawBody: context.rawBody,
+								signature: request.headers.get("x-nowpayments-sig"),
+								ipnKey,
+							}),
+						);
 
-				const orderId = payload.order_id;
-				const status = payload.payment_status;
-				if (!orderId || !status || !PAID_STATUSES.has(status)) {
-					return new Response(JSON.stringify({ ignored: true }), {
-						status: 200,
-						headers: { "content-type": "application/json" },
-					});
-				}
-				// Underpayment: actually_paid < price_amount → do not fulfill.
-				if (
-					typeof payload.actually_paid === "number" &&
-					typeof payload.price_amount === "number" &&
-					payload.actually_paid + 1e-9 < payload.price_amount
-				) {
-					return new Response(JSON.stringify({ underpaid: true }), {
-						status: 200,
-						headers: { "content-type": "application/json" },
-					});
-				}
-
-				const { env: cf } = await import("cloudflare:workers");
-				const db = createDB(cf.HYPERDRIVE);
-				await withRlsService(db, async (tx) => {
-					const port = createPurchasePort(tx);
-					await markPurchasePaid(port, {
-						provider: "nowpayments",
-						externalId: orderId,
-					});
-				});
-				return new Response(JSON.stringify({ received: true }), {
-					status: 200,
-					headers: { "content-type": "application/json" },
-				});
-			},
-		},
+						if (result === "invalid_signature") {
+							return APIError({
+								status: 400,
+								error: "invalid_signature",
+								message: "Signature verification failed.",
+							});
+						}
+						if (result === "unknown_order") {
+							// Signed, but joins no known Purchase — nothing to do. Still 200
+							// so NowPayments stops retrying a callback we cannot act on.
+							console.error(
+								"[nowpayments] IPN references an unknown purchase — not fulfilled",
+							);
+						}
+						return Response.json({ result }, { status: 200 });
+					},
+				},
+			}),
 	},
 });

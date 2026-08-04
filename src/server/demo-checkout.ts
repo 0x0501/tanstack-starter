@@ -9,7 +9,7 @@ import { withRlsService } from "@/db/helper";
 import { sessionMiddleware } from "@/middlewares/protected";
 import { startDemoCheckout } from "@/services/demo-checkout";
 import { getPaymentToggles } from "@/services/payment-toggles";
-import { createPendingPurchase } from "@/services/purchase-db";
+import { createPendingPurchase } from "@/services/purchase";
 import { validated } from "@/utils/api-error";
 
 // sessionMiddleware → betterAuth → database (raw db, no user RLS tx).

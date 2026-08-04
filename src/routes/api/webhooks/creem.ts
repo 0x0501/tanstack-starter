@@ -1,77 +1,69 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { createDB } from "@/db";
 import { withRlsService } from "@/db/helper";
 import { env } from "@/env";
-import { verifyCreemSignature } from "@/services/payments-verify";
-import { markPurchasePaid } from "@/services/purchase";
-import { createPurchasePort } from "@/services/purchase-db";
-import { methodNotAllowed } from "@/utils/api-error";
-import {
-	BodyTooLargeError,
-	readTextCapped,
-	UnsupportedMediaTypeError,
-} from "@/utils/body-limit";
+import { webhookBodyLimitMiddleware } from "@/middlewares/body-limit";
+import { databaseMiddleware } from "@/middlewares/database";
+import { handleCreemWebhook } from "@/services/creem";
+import { APIError, methodNotAllowed } from "@/utils/api-error";
 
-const MAX_BODY = 64 * 1024;
-
+// Creem checkout webhook: a thin shell over the framework-agnostic handler.
+// Fulfillment runs under service RLS context. HTTP contract: a valid signature
+// answers 200 for every mapped outcome so Creem stops retrying a delivered
+// event; a bad or missing signature answers 400 with no effect; a genuine
+// processing failure throws and answers 5xx so Creem retries — that retry is
+// what makes the purchase-paid hook exactly-once.
 export const Route = createFileRoute("/api/webhooks/creem")({
 	server: {
-		handlers: {
-			GET: () => methodNotAllowed("POST"),
-			POST: async ({ request }) => {
-				if (!env.CREEM_WEBHOOK_SECRET) {
-					return new Response("Creem not configured", { status: 503 });
-				}
-				let raw: string;
-				try {
-					raw = await readTextCapped(request, {
-						maxBytes: MAX_BODY,
-						requireJson: true,
-					});
-				} catch (e) {
-					if (e instanceof BodyTooLargeError) {
-						return new Response("Payload too large", { status: 413 });
-					}
-					if (e instanceof UnsupportedMediaTypeError) {
-						return new Response("Unsupported media type", { status: 415 });
-					}
-					throw e;
-				}
-				const ok = verifyCreemSignature(
-					raw,
-					request.headers.get("creem-signature") ??
-						request.headers.get("x-creem-signature"),
-					env.CREEM_WEBHOOK_SECRET,
-				);
-				if (!ok) return new Response("Invalid signature", { status: 400 });
+		handlers: ({ createHandlers }) =>
+			createHandlers({
+				// Answers a browser, which would otherwise get the SPA shell.
+				GET: { handler: () => methodNotAllowed("POST") },
+				POST: {
+					// Public and unauthenticated: the body is capped before anything
+					// reads or hashes it.
+					middleware: [databaseMiddleware, webhookBodyLimitMiddleware],
+					handler: async ({ request, context }) => {
+						const secret = env.CREEM_WEBHOOK_SECRET;
+						if (!secret) {
+							return APIError({
+								status: 503,
+								error: "not_configured",
+								message: "Creem is not configured.",
+							});
+						}
 
-				let payload: {
-					id?: string;
-					object?: { id?: string };
-					eventType?: string;
-				};
-				try {
-					payload = JSON.parse(raw) as typeof payload;
-				} catch {
-					return new Response("Invalid JSON", { status: 400 });
-				}
-				const checkoutId = payload.object?.id ?? payload.id;
-				if (checkoutId) {
-					const { env: cf } = await import("cloudflare:workers");
-					const db = createDB(cf.HYPERDRIVE);
-					await withRlsService(db, async (tx) => {
-						const port = createPurchasePort(tx);
-						await markPurchasePaid(port, {
-							provider: "creem",
-							externalId: checkoutId,
-						});
-					});
-				}
-				return new Response(JSON.stringify({ received: true }), {
-					status: 200,
-					headers: { "content-type": "application/json" },
-				});
-			},
-		},
+						const result = await withRlsService(context.db, (tx) =>
+							handleCreemWebhook(tx, {
+								rawBody: context.rawBody,
+								signature:
+									request.headers.get("creem-signature") ??
+									request.headers.get("x-creem-signature"),
+								secret,
+							}),
+						);
+
+						if (result === "invalid_signature") {
+							return APIError({
+								status: 400,
+								error: "invalid_signature",
+								message: "Signature verification failed.",
+							});
+						}
+						if (result === "invalid_payload") {
+							return APIError({
+								status: 400,
+								error: "invalid_payload",
+								message: "Request body is not valid JSON.",
+							});
+						}
+						if (result === "unknown_order") {
+							console.error(
+								"[creem] event references an unknown purchase — not fulfilled",
+							);
+						}
+						return Response.json({ result }, { status: 200 });
+					},
+				},
+			}),
 	},
 });
