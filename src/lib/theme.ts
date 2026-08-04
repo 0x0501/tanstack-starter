@@ -1,6 +1,6 @@
 export type ThemePreference = "light" | "dark" | "system";
 
-export const THEME_STORAGE_KEY = "theme";
+const THEME_STORAGE_KEY = "theme";
 
 export function readThemePreference(): ThemePreference {
 	if (typeof window === "undefined") return "system";
@@ -15,7 +15,7 @@ export function readThemePreference(): ThemePreference {
 	return "system";
 }
 
-export function resolveDark(preference: ThemePreference): boolean {
+function resolveDark(preference: ThemePreference): boolean {
 	if (preference === "dark") return true;
 	if (preference === "light") return false;
 	if (typeof window === "undefined") return false;

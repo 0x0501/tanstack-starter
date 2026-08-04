@@ -46,13 +46,3 @@ export async function setPaymentToggles(
 			set: { value: toggles, updatedAt: new Date() },
 		});
 }
-
-export async function assertPaymentEnabled(
-	db: Database,
-	provider: PurchaseProvider,
-): Promise<void> {
-	const toggles = await getPaymentToggles(db);
-	if (!toggles[provider]) {
-		throw new Error(`Payment provider ${provider} is disabled.`);
-	}
-}

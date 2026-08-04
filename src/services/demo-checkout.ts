@@ -8,7 +8,7 @@ import type { PurchaseProvider } from "@/services/purchase";
 /** Fixed demo price in minor units ($5.00). Clones replace or parameterize. */
 export const DEMO_CHECKOUT_AMOUNT_MINOR = 500;
 
-export type CheckoutGateResult =
+type CheckoutGateResult =
 	| { ok: true }
 	| { ok: false; code: "disabled" | "not_configured" };
 
@@ -30,6 +30,7 @@ export type DemoCheckoutPort = {
 	createHostedSession(input: {
 		provider: PurchaseProvider;
 		userId: string;
+		userEmail: string;
 		amount: number;
 		currency: string;
 	}): Promise<{ externalId: string; url: string }>;
@@ -42,7 +43,7 @@ export type DemoCheckoutPort = {
 	}): Promise<{ purchaseId: string }>;
 };
 
-export type StartDemoCheckoutResult =
+type StartDemoCheckoutResult =
 	| {
 			ok: true;
 			url: string;
@@ -59,7 +60,7 @@ export type StartDemoCheckoutResult =
  */
 export async function startDemoCheckout(
 	port: DemoCheckoutPort,
-	input: { userId: string; provider: PurchaseProvider },
+	input: { userId: string; userEmail: string; provider: PurchaseProvider },
 ): Promise<StartDemoCheckoutResult> {
 	const toggles = await port.getToggles();
 	const gate = resolveCheckoutGate({
@@ -78,6 +79,7 @@ export async function startDemoCheckout(
 	const session = await port.createHostedSession({
 		provider: input.provider,
 		userId: input.userId,
+		userEmail: input.userEmail,
 		amount,
 		currency,
 	});

@@ -23,5 +23,3 @@ export const LOCALIZED_PAGES = [
 	"/admin/audit",
 	"/admin/oauth-apps",
 ] as const;
-
-export type LocalizedPage = (typeof LOCALIZED_PAGES)[number];

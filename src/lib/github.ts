@@ -6,7 +6,7 @@
  * both bundles). `GITHUB_CLIENT_ID` is an optional server-only alias that must
  * match when both are set.
  */
-export function githubPublicClientId(): string | undefined {
+function githubPublicClientId(): string | undefined {
 	const fromVite =
 		typeof import.meta.env.VITE_GITHUB_CLIENT_ID === "string"
 			? import.meta.env.VITE_GITHUB_CLIENT_ID.trim()

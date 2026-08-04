@@ -7,12 +7,10 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { withRlsService } from "@/db/helper";
 import { sessionMiddleware } from "@/middlewares/protected";
-import {
-	DEMO_CHECKOUT_AMOUNT_MINOR,
-	resolveCheckoutGate,
-} from "@/services/demo-checkout";
+import { startDemoCheckout } from "@/services/demo-checkout";
 import { getPaymentToggles } from "@/services/payment-toggles";
 import { createPendingPurchase } from "@/services/purchase-db";
+import { validated } from "@/utils/api-error";
 
 // sessionMiddleware → betterAuth → database (raw db, no user RLS tx).
 // Purchase / system_config writes use withRlsService; provider HTTP stays outside.
@@ -37,55 +35,33 @@ export const getDemoCheckoutMethods = createServerFn({ method: "GET" })
 export const startDemoPurchase = createServerFn({ method: "POST" })
 	.middleware([sessionMiddleware])
 	.validator(
-		z.object({
-			provider: z.enum(["stripe", "creem", "nowpayments"]),
-		}),
+		validated(
+			z.object({
+				provider: z.enum(["stripe", "creem", "nowpayments"]),
+			}),
+		),
 	)
 	.handler(async ({ context, data }) => {
 		const { createHostedCheckoutSession, isPaymentProviderConfigured } =
 			await import("@/services/payment-providers");
-		const userId = context.session.user.id;
-		const userEmail = context.session.user.email;
-		const provider = data.provider;
 
-		const toggles = await withRlsService(context.db, (tx) =>
-			getPaymentToggles(tx),
-		);
-		const gate = resolveCheckoutGate({
-			provider,
-			toggles,
-			configured: {
-				stripe: isPaymentProviderConfigured("stripe"),
-				creem: isPaymentProviderConfigured("creem"),
-				nowpayments: isPaymentProviderConfigured("nowpayments"),
+		// The order (gate → host session → pending row) lives in
+		// `startDemoCheckout` and is covered there. This handler only supplies
+		// the Worker-side edges: RLS-scoped reads and writes, and provider HTTP
+		// that must stay outside any held transaction.
+		return startDemoCheckout(
+			{
+				getToggles: () =>
+					withRlsService(context.db, (tx) => getPaymentToggles(tx)),
+				isConfigured: isPaymentProviderConfigured,
+				createHostedSession: createHostedCheckoutSession,
+				createPendingPurchase: (input) =>
+					withRlsService(context.db, (tx) => createPendingPurchase(tx, input)),
 			},
-		});
-		if (!gate.ok) return gate;
-
-		// Network call outside any transaction.
-		const session = await createHostedCheckoutSession({
-			provider,
-			userId,
-			userEmail,
-			amount: DEMO_CHECKOUT_AMOUNT_MINOR,
-			currency: "usd",
-		});
-
-		const { purchaseId } = await withRlsService(context.db, (tx) =>
-			createPendingPurchase(tx, {
-				userId,
-				provider,
-				externalId: session.externalId,
-				amount: DEMO_CHECKOUT_AMOUNT_MINOR,
-				currency: "usd",
-			}),
+			{
+				userId: context.session.user.id,
+				userEmail: context.session.user.email,
+				provider: data.provider,
+			},
 		);
-
-		return {
-			ok: true as const,
-			url: session.url,
-			purchaseId,
-			externalId: session.externalId,
-			amount: DEMO_CHECKOUT_AMOUNT_MINOR,
-		};
 	});

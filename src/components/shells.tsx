@@ -62,7 +62,10 @@ export function DashboardShell({
 					<h1 className="text-xl font-medium tracking-tight">{title}</h1>
 				</div>
 				<div className="flex flex-wrap items-center gap-3">
-					<nav className="flex flex-wrap gap-3 text-sm" aria-label="Dashboard">
+					<nav
+						className="flex flex-wrap gap-3 text-sm"
+						aria-label={m.dashboard_title()}
+					>
 						<ShellNavLink to="/dashboard">{m.nav_overview()}</ShellNavLink>
 						<ShellNavLink to="/dashboard/account">
 							{m.nav_account()}
@@ -96,7 +99,10 @@ export function AdminShell({
 					<h1 className="text-xl font-medium tracking-tight">{title}</h1>
 				</div>
 				<div className="flex flex-wrap items-center gap-3">
-					<nav className="flex flex-wrap gap-3 text-sm" aria-label="Admin">
+					<nav
+						className="flex flex-wrap gap-3 text-sm"
+						aria-label={m.admin_title()}
+					>
 						<ShellNavLink to="/admin/users">{m.nav_users()}</ShellNavLink>
 						<ShellNavLink to="/admin/audit">{m.nav_audit()}</ShellNavLink>
 						<ShellNavLink to="/admin/oauth-apps">
@@ -162,16 +168,6 @@ export function Field({
 			) : null}
 		</label>
 	);
-}
-
-export function Surface({
-	children,
-	className,
-}: {
-	children: ReactNode;
-	className?: string;
-}) {
-	return <div className={cn(cardClass, "p-4", className)}>{children}</div>;
 }
 
 export function PageAlert({
