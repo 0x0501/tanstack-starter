@@ -14,11 +14,6 @@ export function buildProtectedResourceMetadata(opts: {
 	return {
 		resource: opts.resource,
 		authorization_servers: [opts.issuer],
-		scopes_supported: [
-			"openid",
-			"profile",
-			"email",
-			"offline_access",
-		] as const,
+		scopes_supported: ["openid", "profile", "email", "offline_access"] as const,
 	};
 }
