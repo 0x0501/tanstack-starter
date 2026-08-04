@@ -3,9 +3,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
 	buttonClass,
+	buttonSecondaryClass,
 	DashboardShell,
 	Field,
 	inputClass,
+	mutedTextClass,
 } from "@/components/shells";
 import {
 	Select,
@@ -32,13 +34,15 @@ import {
 	requestReauthCode,
 	revokeOtherSessions,
 } from "@/server/account-security";
+import { accountSecurityErrorMessage } from "@/utils/auth-errors";
 
 export const Route = createFileRoute("/dashboard/account")({
 	component: AccountPage,
 });
 
 function AccountPage() {
-	const { session } = Route.useRouteContext({ from: "/dashboard" });
+	// `/dashboard` narrowed `session` to signed-in for this whole subtree.
+	const { session } = Route.useRouteContext();
 	const qc = useQueryClient();
 	const overview = useQuery({
 		queryKey: ["security-overview"],
@@ -69,15 +73,22 @@ function AccountPage() {
 		e.preventDefault();
 		setMessage(null);
 		const { error } = await authClient.updateUser({ name, locale });
-		setMessage(error ? (error.message ?? "Update failed") : "Profile saved.");
+		setMessage(
+			error
+				? (error.message ?? m.account_update_failed())
+				: m.account_profile_saved(),
+		);
 		invalidate();
 	}
 
 	const requestOtp = useMutation({
 		mutationFn: () => requestPasswordOtp(),
 		onSuccess: (r) => {
-			if (r.ok) setMessage(`OTP sent. Retry after ${r.retryAfterSeconds}s.`);
-			else setMessage(`Could not send OTP: ${r.code}`);
+			setMessage(
+				r.ok
+					? m.account_otp_sent({ seconds: r.retryAfterSeconds })
+					: accountSecurityErrorMessage(r.code),
+			);
 		},
 	});
 
@@ -85,7 +96,9 @@ function AccountPage() {
 		mutationFn: () => confirmPasswordChange({ data: { otp, newPassword } }),
 		onSuccess: (r) => {
 			setMessage(
-				r.ok ? "Password updated; other sessions signed out." : r.code,
+				r.ok
+					? m.account_password_updated()
+					: accountSecurityErrorMessage(r.code),
 			);
 			if (r.ok) {
 				setOtp("");
@@ -98,8 +111,9 @@ function AccountPage() {
 	const reauthFor2fa = useMutation({
 		mutationFn: () => requestReauthCode(),
 		onSuccess: (r) => {
-			if (r.ok) setMessage("Enrollment code emailed.");
-			else setMessage(`Re-auth: ${r.code}`);
+			setMessage(
+				r.ok ? m.account_reauth_emailed() : accountSecurityErrorMessage(r.code),
+			);
 		},
 	});
 
@@ -109,8 +123,8 @@ function AccountPage() {
 			if (r.ok) {
 				setTotpUri(r.totpURI);
 				setBackupCodes(r.backupCodes);
-				setMessage("Scan the URI / save backup codes, then verify with TOTP.");
-			} else setMessage(`Enable 2FA: ${r.code}`);
+				setMessage(m.account_2fa_enroll_hint());
+			} else setMessage(accountSecurityErrorMessage(r.code));
 			invalidate();
 		},
 	});
@@ -119,7 +133,9 @@ function AccountPage() {
 		mutationFn: () =>
 			disableTwoFactor({ data: { code: factorCode, backupCode: false } }),
 		onSuccess: (r) => {
-			setMessage(r.ok ? "2FA disabled." : `Disable 2FA: ${r.code}`);
+			setMessage(
+				r.ok ? m.account_2fa_disabled() : accountSecurityErrorMessage(r.code),
+			);
 			invalidate();
 		},
 	});
@@ -127,7 +143,9 @@ function AccountPage() {
 	const revokeOthers = useMutation({
 		mutationFn: () => revokeOtherSessions(),
 		onSuccess: (r) => {
-			setMessage(r.ok ? "Other sessions revoked." : "Unauthorized.");
+			setMessage(
+				r.ok ? m.account_sessions_revoked() : m.account_err_unauthorized(),
+			);
 			invalidate();
 		},
 	});
@@ -135,10 +153,11 @@ function AccountPage() {
 	const dropPasskey = useMutation({
 		mutationFn: (passkeyId: string) => removePasskey({ data: { passkeyId } }),
 		onSuccess: (r) => {
-			if (r.ok) setMessage("Passkey removed.");
-			else if (r.code === "not_fresh")
-				setMessage("Session not fresh — re-authenticate, then retry.");
-			else setMessage(r.code);
+			setMessage(
+				r.ok
+					? m.account_passkey_removed()
+					: accountSecurityErrorMessage(r.code),
+			);
 			invalidate();
 		},
 	});
@@ -152,9 +171,7 @@ function AccountPage() {
 	return (
 		<DashboardShell title={m.account_title()}>
 			{message ? (
-				<p className="mb-4 text-sm text-neutral-700 dark:text-neutral-300">
-					{message}
-				</p>
+				<p className="mb-4 text-sm text-foreground">{message}</p>
 			) : null}
 
 			<Tabs defaultValue="profile">
@@ -211,24 +228,42 @@ function AccountPage() {
 				<TabsPanel value="security">
 					<section className="mb-8">
 						{overview.isLoading ? (
-							<p className="text-sm text-neutral-500">Loading…</p>
+							<p className={mutedTextClass}>{m.common_loading()}</p>
 						) : o ? (
-							<ul className="list-inside list-disc text-sm text-neutral-700 dark:text-neutral-300">
+							<ul className="list-inside list-disc text-sm text-foreground">
 								<li>
-									Email: {o.email} (
-									{o.emailVerified ? "verified" : "unverified"})
+									{m.account_email_label()}: {o.email} (
+									{o.emailVerified
+										? m.account_verified()
+										: m.account_unverified()}
+									)
 								</li>
-								<li>Password: {o.hasPassword ? "set" : "none"}</li>
-								<li>GitHub: {o.githubLinked ? "linked" : "not linked"}</li>
-								<li>2FA: {o.twoFactorEnabled ? "on" : "off"}</li>
-								<li>Passkeys: {o.passkeys.length}</li>
+								<li>
+									{m.account_password_label()}:{" "}
+									{o.hasPassword
+										? m.account_password_set()
+										: m.account_password_none()}
+								</li>
+								<li>
+									{m.account_github_label()}:{" "}
+									{o.githubLinked
+										? m.account_github_linked()
+										: m.account_github_not_linked()}
+								</li>
+								<li>
+									{m.account_2fa_label()}:{" "}
+									{o.twoFactorEnabled ? m.account_on() : m.account_off()}
+								</li>
+								<li>
+									{m.account_passkeys_label()}: {o.passkeys.length}
+								</li>
 							</ul>
 						) : null}
 					</section>
 
 					<section className="mb-8 max-w-md">
 						<h2 className="mb-3 text-lg font-medium">
-							Change password (email OTP)
+							{m.account_change_password_title()}
 						</h2>
 						<button
 							type="button"
@@ -236,7 +271,7 @@ function AccountPage() {
 							disabled={requestOtp.isPending}
 							onClick={() => requestOtp.mutate()}
 						>
-							Send OTP to my email
+							{m.account_send_otp()}
 						</button>
 						<form
 							onSubmit={(e) => {
@@ -244,14 +279,14 @@ function AccountPage() {
 								changePw.mutate();
 							}}
 						>
-							<Field label="OTP">
+							<Field label={m.account_field_otp()}>
 								<input
 									className={inputClass}
 									value={otp}
 									onChange={(e) => setOtp(e.target.value)}
 								/>
 							</Field>
-							<Field label="New password">
+							<Field label={m.account_field_new_password()}>
 								<input
 									className={inputClass}
 									type="password"
@@ -260,13 +295,15 @@ function AccountPage() {
 								/>
 							</Field>
 							<button type="submit" className={`${buttonClass} max-w-xs`}>
-								Update password
+								{m.account_update_password()}
 							</button>
 						</form>
 					</section>
 
 					<section className="mb-8 max-w-md">
-						<h2 className="mb-3 text-lg font-medium">Two-factor</h2>
+						<h2 className="mb-3 text-lg font-medium">
+							{m.account_section_two_factor()}
+						</h2>
 						{!o?.twoFactorEnabled ? (
 							<>
 								<button
@@ -274,7 +311,7 @@ function AccountPage() {
 									className={`${buttonClass} mb-2 max-w-xs`}
 									onClick={() => reauthFor2fa.mutate()}
 								>
-									Email enrollment code
+									{m.account_email_enrollment_code()}
 								</button>
 								<form
 									onSubmit={(e) => {
@@ -282,7 +319,7 @@ function AccountPage() {
 										enable2fa.mutate();
 									}}
 								>
-									<Field label="Enrollment OTP">
+									<Field label={m.account_field_enrollment_otp()}>
 										<input
 											className={inputClass}
 											value={otp}
@@ -290,7 +327,7 @@ function AccountPage() {
 										/>
 									</Field>
 									<button type="submit" className={`${buttonClass} max-w-xs`}>
-										Begin 2FA enable
+										{m.account_begin_2fa()}
 									</button>
 								</form>
 								{totpUri ? (
@@ -307,7 +344,7 @@ function AccountPage() {
 									disable2fa.mutate();
 								}}
 							>
-								<Field label="TOTP to disable 2FA">
+								<Field label={m.account_field_totp_disable()}>
 									<input
 										className={inputClass}
 										value={factorCode}
@@ -315,14 +352,16 @@ function AccountPage() {
 									/>
 								</Field>
 								<button type="submit" className={`${buttonClass} max-w-xs`}>
-									Disable 2FA
+									{m.account_disable_2fa()}
 								</button>
 							</form>
 						)}
 					</section>
 
 					<section className="mb-8">
-						<h2 className="mb-3 text-lg font-medium">Passkeys</h2>
+						<h2 className="mb-3 text-lg font-medium">
+							{m.account_section_passkeys()}
+						</h2>
 						{o?.passkeys.length ? (
 							<ul className="space-y-2 text-sm">
 								{o.passkeys.map((pk) => (
@@ -336,19 +375,16 @@ function AccountPage() {
 											className={`${buttonClass} w-auto px-2 py-1 text-xs`}
 											onClick={() => dropPasskey.mutate(pk.id)}
 										>
-											Remove
+											{m.account_remove()}
 										</button>
 									</li>
 								))}
 							</ul>
 						) : (
-							<p className="text-sm text-neutral-600">
-								No passkeys registered.
-							</p>
+							<p className={mutedTextClass}>{m.account_no_passkeys()}</p>
 						)}
-						<p className="mt-2 text-xs text-neutral-500">
-							Add passkeys from a fresh session via the browser passkey prompt
-							(auth client).
+						<p className="mt-2 text-xs text-muted-foreground">
+							{m.account_passkey_hint()}
 						</p>
 					</section>
 				</TabsPanel>
@@ -359,13 +395,13 @@ function AccountPage() {
 						className={`${buttonClass} mb-3 max-w-xs`}
 						onClick={() => revokeOthers.mutate()}
 					>
-						Revoke other sessions
+						{m.account_revoke_other_sessions()}
 					</button>
 					{sessions.data ? (
-						<ul className="space-y-1 text-xs text-neutral-600">
+						<ul className="space-y-1 text-xs text-muted-foreground">
 							{sessions.data.map((s) => (
 								<li key={s.id}>
-									{s.isCurrent ? "current · " : ""}
+									{s.isCurrent ? `${m.account_session_current()} · ` : ""}
 									{s.createdAt}
 									{s.ipAddress ? ` · ${s.ipAddress}` : ""}
 								</li>
@@ -374,7 +410,7 @@ function AccountPage() {
 					) : null}
 					<button
 						type="button"
-						className={`${buttonClass} mt-6 max-w-xs bg-neutral-600`}
+						className={`${buttonSecondaryClass} mt-6 w-full max-w-xs`}
 						onClick={async () => {
 							await authClient.signOut();
 							window.location.href = "/sign-in";

@@ -1,10 +1,7 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { AuthDivider, GithubButton } from "@/components/auth/social";
-import {
-	Turnstile,
-	type TurnstileHandle,
-} from "@/components/auth/turnstile";
+import { Turnstile, type TurnstileHandle } from "@/components/auth/turnstile";
 import {
 	AuthShell,
 	buttonClass,

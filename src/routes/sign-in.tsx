@@ -5,10 +5,7 @@ import {
 	GithubButton,
 	PasskeyButton,
 } from "@/components/auth/social";
-import {
-	Turnstile,
-	type TurnstileHandle,
-} from "@/components/auth/turnstile";
+import { Turnstile, type TurnstileHandle } from "@/components/auth/turnstile";
 import {
 	AuthShell,
 	buttonClass,
@@ -130,41 +127,37 @@ function SignInPage() {
 				</button>
 			</form>
 
-			<>
-				<AuthDivider />
-				<div className="mt-4 flex flex-col gap-2">
-					{GITHUB_OAUTH_ENABLED ? (
-						<GithubButton label={m.auth_continue_github()} />
-					) : null}
-					<PasskeyButton
-						label={m.auth_use_passkey()}
-						disabled={pending}
-						onClick={() => {
-							setPending(true);
-							setError(null);
-							void authClient.signIn
-								.passkey()
-								.then(({ error: err }) => {
-									if (err) {
-										setError(err.message ?? m.auth_passkey_failed());
-										return;
-									}
-									afterAuth();
-								})
-								.catch((err) => {
-									setError(
-										err instanceof Error
-											? err.message
-											: m.auth_passkey_failed(),
-									);
-								})
-								.finally(() => {
-									setPending(false);
-								});
-						}}
-					/>
-				</div>
-			</>
+			<AuthDivider />
+			<div className="mt-4 flex flex-col gap-2">
+				{GITHUB_OAUTH_ENABLED ? (
+					<GithubButton label={m.auth_continue_github()} />
+				) : null}
+				<PasskeyButton
+					label={m.auth_use_passkey()}
+					disabled={pending}
+					onClick={() => {
+						setPending(true);
+						setError(null);
+						void authClient.signIn
+							.passkey()
+							.then(({ error: err }) => {
+								if (err) {
+									setError(err.message ?? m.auth_passkey_failed());
+									return;
+								}
+								afterAuth();
+							})
+							.catch((err) => {
+								setError(
+									err instanceof Error ? err.message : m.auth_passkey_failed(),
+								);
+							})
+							.finally(() => {
+								setPending(false);
+							});
+					}}
+				/>
+			</div>
 
 			<p className={`mt-4 text-center ${mutedTextClass}`}>
 				{m.auth_no_account()}{" "}

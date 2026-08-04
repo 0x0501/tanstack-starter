@@ -60,14 +60,16 @@ function AdminOAuthAppsPage() {
 	return (
 		<AdminShell title={m.admin_oauth_title()}>
 			<section className="mb-10 max-w-lg">
-				<h2 className="mb-3 text-lg font-medium">Create client</h2>
+				<h2 className="mb-3 text-lg font-medium">
+					{m.admin_oauth_create_client()}
+				</h2>
 				<form
 					onSubmit={(e) => {
 						e.preventDefault();
 						createMut.mutate();
 					}}
 				>
-					<Field label="Name">
+					<Field label={m.admin_oauth_field_name()}>
 						<input
 							className={inputClass}
 							required
@@ -75,7 +77,7 @@ function AdminOAuthAppsPage() {
 							onChange={(e) => setName(e.target.value)}
 						/>
 					</Field>
-					<Field label="Redirect URIs (one per line)">
+					<Field label={m.admin_oauth_field_redirect_uris()}>
 						<textarea
 							className={inputClass}
 							rows={3}
@@ -106,9 +108,11 @@ function AdminOAuthAppsPage() {
 			</section>
 
 			<section>
-				<h2 className="mb-3 text-lg font-medium">Registered clients</h2>
+				<h2 className="mb-3 text-lg font-medium">
+					{m.admin_oauth_registered_clients()}
+				</h2>
 				{isLoading ? (
-					<p className="text-sm text-neutral-500">Loading…</p>
+					<p className="text-sm text-muted-foreground">{m.common_loading()}</p>
 				) : null}
 				{error ? (
 					<p className="text-sm text-red-600" role="alert">
@@ -116,22 +120,24 @@ function AdminOAuthAppsPage() {
 					</p>
 				) : null}
 				{data && data.length === 0 ? (
-					<p className="text-sm text-neutral-600">No OAuth clients yet.</p>
+					<p className="text-sm text-muted-foreground">
+						{m.admin_oauth_empty()}
+					</p>
 				) : null}
 				{data && data.length > 0 ? (
 					<ul className="space-y-3">
 						{data.map((c) => (
 							<li
 								key={c.clientId}
-								className="rounded-md border border-neutral-200 p-3 text-sm dark:border-neutral-800"
+								className="rounded-md border border-border p-3 text-sm border-border"
 							>
 								<div className="flex flex-wrap items-start justify-between gap-2">
 									<div>
 										<p className="font-medium">{c.name ?? "(unnamed)"}</p>
-										<p className="font-mono text-xs text-neutral-500">
+										<p className="font-mono text-xs text-muted-foreground">
 											{c.clientId}
 										</p>
-										<p className="mt-1 text-xs text-neutral-600">
+										<p className="mt-1 text-xs text-muted-foreground">
 											{c.redirectUris.join(", ")}
 										</p>
 									</div>

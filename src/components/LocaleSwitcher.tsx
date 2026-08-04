@@ -3,8 +3,8 @@ import { useLocation } from "@tanstack/react-router";
 import { LOCALE_COOKIE, writeLocaleCookie } from "@/lib/locale-cookie";
 import * as m from "@/paraglide/messages";
 import { getLocale, locales } from "@/paraglide/runtime";
-import { samePageLocaleHref } from "@/utils/same-page-locale-href";
 import { cn } from "@/utils/cn";
+import { samePageLocaleHref } from "@/utils/same-page-locale-href";
 
 const LABEL: Record<string, () => string> = {
 	en: () => m.locale_en(),
@@ -40,7 +40,12 @@ export function LocaleSwitcher({
 				<span className="font-medium uppercase">{current}</span>
 			</Menu.Trigger>
 			<Menu.Portal>
-				<Menu.Positioner side="bottom" align="end" sideOffset={6} className="z-50">
+				<Menu.Positioner
+					side="bottom"
+					align="end"
+					sideOffset={6}
+					className="z-50"
+				>
 					<Menu.Popup
 						className="min-w-[9rem] overflow-hidden rounded border border-border bg-background py-1 text-foreground outline-none shadow-sm"
 						data-testid="locale-switcher-menu"
