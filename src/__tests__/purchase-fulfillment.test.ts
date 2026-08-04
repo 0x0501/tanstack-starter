@@ -1,160 +1,204 @@
 /**
- * Purchase fulfillment seam: a paid Purchase invokes the purchase-paid hook at
- * most once; fulfillment trusts the Purchase row's amount and user.
+ * Purchase fulfillment seam: the purchase-paid hook runs inside the same
+ * transaction as the pending→paid flip, so a delivery is exactly-once across
+ * webhook retries — never twice, and never silently lost.
+ *
+ * Runs against the real Postgres container: the atomicity under test is the
+ * database's, and an in-memory double cannot fail the way this needs to.
  */
+import { and, eq } from "drizzle-orm";
 import { describe, expect, it, vi } from "vitest";
-import {
-	type MarkPurchasePaidResult,
-	markPurchasePaid,
-	type Purchase,
-	type PurchaseFulfillmentPort,
-} from "@/services/purchase";
+import type { Database } from "@/db";
+import { adminAction, purchase } from "@/db/schema";
+import { markPurchasePaid, type Purchase } from "@/services/purchase";
+import { createTestDatabase, hasTestDatabase } from "./test-db";
 
-function memoryPort(seed: Purchase[]): PurchaseFulfillmentPort & {
-	audits: Array<{ action: string; targetId: string }>;
-} {
-	const rows = new Map(seed.map((p) => [p.id, { ...p }]));
-	const audits: Array<{ action: string; targetId: string }> = [];
+const PURCHASE_DDL = `
+	CREATE TEMP TABLE "purchase" (
+		id TEXT PRIMARY KEY,
+		user_id TEXT NOT NULL,
+		provider TEXT NOT NULL,
+		external_id TEXT NOT NULL,
+		amount TEXT NOT NULL,
+		currency TEXT NOT NULL DEFAULT 'usd',
+		status TEXT NOT NULL DEFAULT 'pending',
+		metadata JSONB,
+		paid_at TIMESTAMPTZ,
+		created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
+		updated_at TIMESTAMPTZ DEFAULT now() NOT NULL,
+		UNIQUE (provider, external_id)
+	);
+	CREATE TEMP TABLE "admin_action" (
+		id TEXT PRIMARY KEY,
+		actor_id TEXT,
+		action TEXT NOT NULL,
+		target_type TEXT,
+		target_id TEXT,
+		detail JSONB,
+		created_at TIMESTAMPTZ DEFAULT now() NOT NULL
+	);
+`;
 
-	return {
-		audits,
-		async findByProviderExternal(provider, externalId) {
-			for (const row of rows.values()) {
-				if (row.provider === provider && row.externalId === externalId) {
-					return { ...row };
-				}
-			}
-			return null;
-		},
-		async tryMarkPaid(id) {
-			const row = rows.get(id);
-			if (!row || row.status !== "pending") return null;
-			row.status = "paid";
-			row.paidAt = new Date();
-			return { ...row };
-		},
-		async logAudit(entry) {
-			audits.push({
-				action: entry.action,
-				targetId: entry.targetId ?? "",
-			});
-		},
-	};
+async function seedPending(
+	db: Database,
+	overrides: Partial<{ externalId: string; amount: number }> = {},
+) {
+	const id = crypto.randomUUID();
+	await db.insert(purchase).values({
+		id,
+		userId: "user-1",
+		provider: "stripe",
+		externalId: overrides.externalId ?? "cs_test_1",
+		amount: String(overrides.amount ?? 1999),
+		currency: "usd",
+		status: "pending",
+	});
+	return id;
 }
 
-const pending = (over: Partial<Purchase> = {}): Purchase => ({
-	id: "p1",
-	userId: "u1",
-	provider: "stripe",
-	externalId: "cs_1",
-	amount: 1_000,
-	currency: "usd",
-	status: "pending",
-	paidAt: null,
-	...over,
-});
+function readRow(db: Database, externalId: string) {
+	return db
+		.select()
+		.from(purchase)
+		.where(
+			and(eq(purchase.provider, "stripe"), eq(purchase.externalId, externalId)),
+		)
+		.limit(1);
+}
 
-describe("markPurchasePaid", () => {
-	it("flips pending to paid and invokes the purchase-paid hook once with trusted fields", async () => {
-		const port = memoryPort([pending()]);
-		const onPaid = vi.fn(async (_p: Purchase) => {});
+function readAudits(db: Database) {
+	return db.select().from(adminAction);
+}
+
+describe.skipIf(!hasTestDatabase)("markPurchasePaid", () => {
+	it("fulfills a pending purchase once, with the row's own amount and user", async () => {
+		const db = await createTestDatabase(PURCHASE_DDL);
+		await seedPending(db);
+		const hook = vi.fn(async (_tx: Database, _p: Purchase) => {});
 
 		const result = await markPurchasePaid(
-			port,
-			{ provider: "stripe", externalId: "cs_1" },
-			onPaid,
+			db,
+			{ provider: "stripe", externalId: "cs_test_1" },
+			hook,
 		);
 
-		expect(result).toEqual({
-			status: "fulfilled",
-			purchase: expect.objectContaining({
-				id: "p1",
-				userId: "u1",
-				amount: 1_000,
-				status: "paid",
-			}),
-		} satisfies Partial<MarkPurchasePaidResult>);
-		expect(onPaid).toHaveBeenCalledTimes(1);
-		expect(onPaid).toHaveBeenCalledWith(
-			expect.objectContaining({ userId: "u1", amount: 1_000 }),
-		);
-		expect(port.audits).toContainEqual({
-			action: "purchase.paid",
-			targetId: "p1",
+		expect(result.status).toBe("fulfilled");
+		expect(hook).toHaveBeenCalledTimes(1);
+		// Trusted values come from the row, never from the callback.
+		expect(hook.mock.calls[0][1]).toMatchObject({
+			userId: "user-1",
+			amount: 1999,
+			currency: "usd",
+			status: "paid",
 		});
+
+		const [row] = await readRow(db, "cs_test_1");
+		expect(row.status).toBe("paid");
+		expect(row.paidAt).not.toBeNull();
 	});
 
-	it("credits at most once no matter how many confirmations arrive", async () => {
-		const port = memoryPort([pending()]);
-		const onPaid = vi.fn(async () => {});
+	it("ignores a duplicate delivery without running the hook again", async () => {
+		const db = await createTestDatabase(PURCHASE_DDL);
+		await seedPending(db);
+		const hook = vi.fn(async (_tx: Database, _p: Purchase) => {});
 
-		const first = await markPurchasePaid(
-			port,
-			{ provider: "stripe", externalId: "cs_1" },
-			onPaid,
+		await markPurchasePaid(
+			db,
+			{ provider: "stripe", externalId: "cs_test_1" },
+			hook,
 		);
-		const second = await markPurchasePaid(
-			port,
-			{ provider: "stripe", externalId: "cs_1" },
-			onPaid,
+		const again = await markPurchasePaid(
+			db,
+			{ provider: "stripe", externalId: "cs_test_1" },
+			hook,
 		);
 
-		expect(first.status).toBe("fulfilled");
-		expect(second.status).toBe("already_paid");
-		expect(onPaid).toHaveBeenCalledTimes(1);
-		expect(
-			port.audits.filter((a) => a.action === "purchase.paid"),
-		).toHaveLength(1);
-		expect(
-			port.audits.filter((a) => a.action === "purchase.duplicate_ignored"),
-		).toHaveLength(1);
+		expect(again.status).toBe("already_paid");
+		expect(hook).toHaveBeenCalledTimes(1);
+
+		const audits = await readAudits(db);
+		expect(audits.map((a) => a.action)).toEqual([
+			"purchase.paid",
+			"purchase.duplicate_ignored",
+		]);
 	});
 
-	it("is a no-op for an unknown external id", async () => {
-		const port = memoryPort([]);
-		const onPaid = vi.fn(async () => {});
+	it("reports not_found for an external id it does not know", async () => {
+		const db = await createTestDatabase(PURCHASE_DDL);
+		const hook = vi.fn(async (_tx: Database, _p: Purchase) => {});
 
 		const result = await markPurchasePaid(
-			port,
-			{ provider: "stripe", externalId: "cs_ghost" },
-			onPaid,
+			db,
+			{ provider: "stripe", externalId: "cs_missing" },
+			hook,
 		);
 
 		expect(result.status).toBe("not_found");
-		expect(onPaid).not.toHaveBeenCalled();
+		expect(hook).not.toHaveBeenCalled();
 	});
 
-	it("fails closed when the provider-reported amount disagrees with the Purchase row", async () => {
-		const port = memoryPort([pending({ amount: 50_000 })]);
-		const onPaid = vi.fn(async () => {});
+	it("fails closed when the reported amount disagrees with the row", async () => {
+		const db = await createTestDatabase(PURCHASE_DDL);
+		await seedPending(db, { amount: 1999 });
+		const hook = vi.fn(async (_tx: Database, _p: Purchase) => {});
 
 		const result = await markPurchasePaid(
-			port,
-			{
-				provider: "stripe",
-				externalId: "cs_1",
-				reportedAmount: 1,
-			},
-			onPaid,
+			db,
+			{ provider: "stripe", externalId: "cs_test_1", reportedAmount: 100 },
+			hook,
 		);
 
 		expect(result.status).toBe("amount_mismatch");
-		expect(onPaid).not.toHaveBeenCalled();
-		const after = await port.findByProviderExternal("stripe", "cs_1");
-		expect(after?.status).toBe("pending");
+		expect(hook).not.toHaveBeenCalled();
+		const [row] = await readRow(db, "cs_test_1");
+		expect(row.status).toBe("pending");
 	});
 
-	it("does not fulfill a failed purchase", async () => {
-		const port = memoryPort([pending({ status: "failed" })]);
-		const onPaid = vi.fn(async () => {});
+	// The reason the hook takes `tx`. Without the shared transaction the flip
+	// survives a failed hook, the provider's retry short-circuits on
+	// `already_paid`, and the delivery is lost while the audit log claims it
+	// happened.
+	it("rolls the flip back when the hook throws, and the retry delivers exactly once", async () => {
+		const db = await createTestDatabase(PURCHASE_DDL);
+		await seedPending(db);
 
-		const result = await markPurchasePaid(
-			port,
-			{ provider: "stripe", externalId: "cs_1" },
-			onPaid,
+		let attempts = 0;
+		const delivered: string[] = [];
+		const hook = async (_tx: Database, p: Purchase) => {
+			attempts += 1;
+			if (attempts === 1) throw new Error("fulfillment backend is down");
+			delivered.push(p.id);
+		};
+
+		await expect(
+			markPurchasePaid(
+				db,
+				{ provider: "stripe", externalId: "cs_test_1" },
+				hook,
+			),
+		).rejects.toThrow("fulfillment backend is down");
+
+		// The row is back to pending, so the retry is not short-circuited.
+		const [afterFailure] = await readRow(db, "cs_test_1");
+		expect(afterFailure.status).toBe("pending");
+		expect(afterFailure.paidAt).toBeNull();
+		expect(delivered).toEqual([]);
+
+		// And nothing claimed the purchase was delivered.
+		expect(await readAudits(db)).toHaveLength(0);
+
+		const retry = await markPurchasePaid(
+			db,
+			{ provider: "stripe", externalId: "cs_test_1" },
+			hook,
 		);
 
-		expect(result.status).toBe("not_pending");
-		expect(onPaid).not.toHaveBeenCalled();
+		expect(retry.status).toBe("fulfilled");
+		expect(delivered).toHaveLength(1);
+		const [afterRetry] = await readRow(db, "cs_test_1");
+		expect(afterRetry.status).toBe("paid");
+		expect((await readAudits(db)).map((a) => a.action)).toEqual([
+			"purchase.paid",
+		]);
 	});
 });

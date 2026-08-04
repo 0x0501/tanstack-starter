@@ -183,16 +183,16 @@ The Starter ships a minimal Postgres row-level security pattern (service vs user
 _Avoid_: app-layer-only auth as the sole story; product RLS policies living in the Starter by default.
 
 **Payment provider adapter**:
-An optional integration with an external payment rail (Stripe, Creem, NowPayments) that verifies webhooks/IPN and notifies the app of a completed purchase. Optional at runtime (env + enable toggles); not a wallet and not a SaaS subscription product.
-_Avoid_: recharge order, wallet credit, top-up (product-domain); payment plugin as the product.
+An optional integration with an external payment rail (Stripe, Creem, NowPayments) that verifies webhooks/IPN and notifies the app of a completed purchase. Optional at runtime (env + enable toggles); not a wallet and not a SaaS subscription product. Each rail owns one module holding its signature verification and its framework-agnostic handler together — the rails do not share a state machine, so they are parallel, not factored behind one interface.
+_Avoid_: recharge order, wallet credit, top-up (product-domain); payment plugin as the product; a single generic webhook interface the rails plug into.
 
 **Purchase**:
 One payment attempt the Starter records for idempotency (provider, external id, amount, currency, user, status). Success is delivered only through the purchase-paid hook; the Starter never invents balances or entitlements from it.
 _Avoid_: order (unless the product domain defines Order); top-up; recharge; subscription.
 
 **Purchase-paid hook**:
-The single extension point the Starter calls after a Purchase is confirmed paid at most once. Product domain implements fulfillment (entitlement, credit, flag, email, etc.).
-_Avoid_: wallet credit handler as Starter default; product-specific settlement logic.
+The single extension point the Starter calls after a Purchase is confirmed paid, exactly once. It runs inside the transaction that flips the Purchase to paid and receives that transaction, so a throw rolls the flip back and the provider's retry re-enters and delivers once. Because it shares the transaction it does database work only; fulfillment that needs IO writes a durable row in the hook and does the IO afterwards. Product domain implements fulfillment (entitlement, credit, flag).
+_Avoid_: wallet credit handler as Starter default; product-specific settlement logic; HTTP calls or email sends inside the hook; describing delivery as "at most once" (the flip alone was that, and it lost deliveries).
 
 **Payment method toggle**:
 A superadmin/admin switch that enables or disables each payment provider adapter independently at runtime; default all on when configured. A disabled provider is refused server-side, not merely hidden from the UI.
@@ -219,7 +219,8 @@ _Avoid_: request log; every sign-in as an audit row.
 - OAuth multi-value search parameters survive router round-trips; issuer metadata is never an empty WIP while advertised.
 - HttpError refusals retain HTTP status across the server-function wire.
 - The Start handler receives the original Request under Paraglide middleware (no de-localized handoff that 307-loops with rewrite).
-- A Purchase credits fulfillment at most once no matter how many webhooks, retries, or return-page hits arrive.
+- A Purchase credits fulfillment exactly once no matter how many webhooks, retries, or return-page hits arrive: never twice, and never lost to a hook that failed.
+- A payment webhook answers 400 for a bad signature, 200 for every mapped outcome, and 5xx only when processing genuinely failed — the provider's retry is what makes fulfillment exactly-once.
 - Fulfillment trusts the Purchase row's amount and user, never amounts reported only in a payment callback.
 - Payment provider adapters that are disabled or unconfigured are refused server-side.
 - Production database access is Hyperdrive → Postgres; the Better Auth Drizzle adapter is `pg` only.
