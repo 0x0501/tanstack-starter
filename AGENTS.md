@@ -96,7 +96,8 @@ Both pages use a pass-through `validateSearch` so the signed query stays in the 
 
 - Biome, **tabs**, double quotes. Run `bun run check` before finishing.
 - Path aliases: `@/*` and `#/*` both map to `src/*`.
-- Add/move a route → run `bun run generate-routes`. Escape a leading dot in route folders as `[.]` (e.g. `[.]well-known`).
+- Add/move a route → run `bun run generate-routes`, and **commit the result**. Escape a leading dot in route folders as `[.]` (e.g. `[.]well-known`).
+  - `dev` and `build` regenerate the tree too, via the Start plugin. The plugin appends a `declare module '@tanstack/react-start'` footer that the standalone `tsr` CLI knows nothing about, so `tsr.config.json` carries a hand-copy of it under `routeTreeFileFooter` to keep both generators byte-identical. CI diffs the tree after `build`; if a TanStack upgrade changes that footer, that diff is where it surfaces — update `tsr.config.json` to match.
 - Keep `tanstackStartCookies()` last in the Better Auth plugins array.
 - **Tests** go in `src/__tests__/` (`*.test.ts[x]`) — not colocated next to source.
 - **Business/domain logic** goes in `src/services/`, kept framework-agnostic; `src/lib/` is only for framework glue and config.

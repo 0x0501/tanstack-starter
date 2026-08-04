@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+
+      # Placeholder env so T3Env validation and the tests have every required
+      # key. `validate-prod-env` refuses these values, so a deploy cannot
+      # inherit them from here.
+      - run: cp .env.example .env
+
+      - run: bun run check
+      - run: bun run typecheck
+
+      # Needs Docker for the Postgres testcontainer (RLS policies and the
+      # Better Auth suites run against real migrations, not a mock).
+      - run: bun run test
+
+      # The build is the check that catches server-only imports leaking into
+      # the client bundle.
+      - run: bun run build
+
+      # The route tree is generated, and the Start plugin rewrites it during
+      # the build. A stale committed copy typechecks against the wrong route
+      # map. This also guards `tsr.config.json`'s `routeTreeFileFooter`: it
+      # hand-copies the footer the plugin emits so `bun run generate-routes`
+      # agrees with the build, and this diff is what catches the two drifting
+      # apart after a TanStack upgrade.
+      - name: Route tree is committed up to date
+        run: git diff --exit-code src/routeTree.gen.ts
+
+      # The build only fails when a server-only import breaks bundling. This
+      # reads the emitted client assets for server code and secret values that
+      # bundled cleanly and would have shipped to every browser.
+      - run: bun run check:client-bundle
