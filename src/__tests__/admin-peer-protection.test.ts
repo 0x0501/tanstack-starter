@@ -14,6 +14,7 @@ import {
 	assertNotLastAdmin,
 	isAdminRole,
 } from "@/services/admin-security";
+import { HttpError } from "@/utils/api-error";
 import { createTestDatabase, hasTestDatabase } from "./test-db";
 
 const ACTOR = "actor-admin";
@@ -45,6 +46,20 @@ describe.skipIf(!hasTestDatabase)("administrator peer protection", () => {
 
 		it(`refuses to ban a ${peerRole}`, () => {
 			expect(() => act({ banning: true })).toThrow(/administrator/i);
+		});
+
+		// A bare Error would reach the client without a status, so the query
+		// client's "a 4xx is a refusal, not a flake" rule would miss it and retry
+		// a decision that can never change.
+		it(`refuses to ban a ${peerRole} with a 403 that survives the wire`, () => {
+			expect(() => act({ banning: true })).toThrow(HttpError);
+			try {
+				act({ banning: true });
+				expect.unreachable();
+			} catch (e) {
+				expect((e as HttpError).status).toBe(403);
+				expect((e as HttpError).error).toBe("forbidden");
+			}
 		});
 
 		it(`refuses to demote a ${peerRole}`, () => {

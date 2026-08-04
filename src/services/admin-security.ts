@@ -16,6 +16,7 @@ import {
 	session,
 	user,
 } from "@/db/schema";
+import { HttpError } from "@/utils/api-error";
 
 const ADMIN_ROLES = ["admin", "superadmin"] as const;
 
@@ -64,7 +65,11 @@ export async function assertNotLastAdmin(
 			),
 		);
 	if (Number(rows[0]?.n ?? 0) === 0) {
-		throw new Error("Cannot remove the last administrator.");
+		throw new HttpError({
+			status: 409,
+			error: "conflict",
+			message: "Cannot remove the last administrator.",
+		});
 	}
 }
 
@@ -125,18 +130,34 @@ export function assertAdminMayActOn(args: {
 
 	const changesRole = nextRole !== undefined && nextRole !== targetRole;
 	if (changesRole && actorId === targetId) {
-		throw new Error("You cannot change your own role.");
+		throw new HttpError({
+			status: 403,
+			error: "forbidden",
+			message: "You cannot change your own role.",
+		});
 	}
 
 	if (!isAdminRole(targetRole)) return;
 	if (changesRole) {
-		throw new Error("You cannot change another administrator's role.");
+		throw new HttpError({
+			status: 403,
+			error: "forbidden",
+			message: "You cannot change another administrator's role.",
+		});
 	}
 	if (banning === true) {
-		throw new Error("You cannot ban another administrator.");
+		throw new HttpError({
+			status: 403,
+			error: "forbidden",
+			message: "You cannot ban another administrator.",
+		});
 	}
 	if (args.revokingCredentials) {
-		throw new Error("You cannot revoke another administrator's credentials.");
+		throw new HttpError({
+			status: 403,
+			error: "forbidden",
+			message: "You cannot revoke another administrator's credentials.",
+		});
 	}
 }
 
