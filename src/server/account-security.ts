@@ -18,6 +18,10 @@ import { MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH } from "@/utils/input-rules";
 
 // Security-page server functions. betterAuthMiddleware only — auth.api runs on
 // the raw connection; an open RLS transaction would buy nothing.
+//
+// One read function per page, not one per panel. A server function is its own
+// HTTP request and has to establish the caller itself, so splitting the account
+// page's panels across two of them bought two session reads for one render.
 
 export const getSecurityOverview = createServerFn({ method: "GET" })
 	.middleware([betterAuthMiddleware])
@@ -25,9 +29,10 @@ export const getSecurityOverview = createServerFn({ method: "GET" })
 		const headers = getRequestHeaders();
 		const session = await context.auth.api.getSession({ headers });
 		if (!session?.user) return null;
-		const [accounts, passkeys] = await Promise.all([
+		const [accounts, passkeys, sessions] = await Promise.all([
 			context.auth.api.listUserAccounts({ headers }),
 			context.auth.api.listPasskeys({ headers }),
+			context.auth.api.listSessions({ headers }),
 		]);
 		const u = session.user as typeof session.user & {
 			twoFactorEnabled?: boolean | null;
@@ -41,6 +46,15 @@ export const getSecurityOverview = createServerFn({ method: "GET" })
 			hasPassword: accounts.some((a) => a.providerId === "credential"),
 			githubLinked: accounts.some((a) => a.providerId === "github"),
 			twoFactorEnabled: Boolean(u.twoFactorEnabled),
+			sessions: sessions.map((s) => ({
+				id: s.id,
+				token: s.token,
+				createdAt: new Date(s.createdAt).toISOString(),
+				expiresAt: new Date(s.expiresAt).toISOString(),
+				ipAddress: s.ipAddress ?? null,
+				userAgent: s.userAgent ?? null,
+				isCurrent: s.token === session.session.token,
+			})),
 			passkeys: passkeys.map((p) => ({
 				id: p.id,
 				name: p.name ?? null,
@@ -49,24 +63,9 @@ export const getSecurityOverview = createServerFn({ method: "GET" })
 		};
 	});
 
-export const listSessions = createServerFn({ method: "GET" })
-	.middleware([betterAuthMiddleware])
-	.handler(async ({ context }) => {
-		const headers = getRequestHeaders();
-		const session = await context.auth.api.getSession({ headers });
-		if (!session?.user) return null;
-		const sessions = await context.auth.api.listSessions({ headers });
-		return sessions.map((s) => ({
-			id: s.id,
-			token: s.token,
-			createdAt: new Date(s.createdAt).toISOString(),
-			expiresAt: new Date(s.expiresAt).toISOString(),
-			ipAddress: s.ipAddress ?? null,
-			userAgent: s.userAgent ?? null,
-			isCurrent: s.token === session.session.token,
-		}));
-	});
-
+// `revokeOtherSessions` keeps its own authoritative read: a privileged
+// mutation must not trust the cookie cache, which may still be serving a
+// session that was revoked seconds ago.
 export const revokeOtherSessions = createServerFn({ method: "POST" })
 	.middleware([betterAuthMiddleware])
 	.handler(async ({ context }) => {
