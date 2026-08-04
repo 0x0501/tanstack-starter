@@ -1,34 +1,17 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
-import { createServerFn } from "@tanstack/react-start";
-import { betterAuthMiddleware } from "@/middlewares/better-auth";
 import { isAdminRole } from "@/services/admin-security";
 
-const getAdminSession = createServerFn({ method: "GET" })
-	.middleware([betterAuthMiddleware])
-	.handler(async ({ context, request }) => {
-		const session = await context.auth.api.getSession({
-			headers: request.headers,
-		});
-		if (!session?.user) return null;
-		const role = (session.user as { role?: string | null }).role ?? null;
-		if (!isAdminRole(role)) return { forbidden: true as const };
-		return {
-			user: {
-				id: session.user.id,
-				email: session.user.email,
-				name: session.user.name,
-				role,
-			},
-		};
-	});
-
 export const Route = createFileRoute("/admin")({
-	beforeLoad: async () => {
-		const session = await getAdminSession();
-		if (!session) throw redirect({ to: "/sign-in" });
-		if ("forbidden" in session) throw redirect({ to: "/dashboard" });
+	// `session` comes from the root route's beforeLoad (one read per request).
+	// This gate is chrome only: it decides whether the console renders. Every
+	// privileged mutation re-checks the role server-side, so a stale cookie
+	// cache here can reveal a layout, never an operation.
+	beforeLoad: ({ context: { session } }) => {
+		if (!session?.user) throw redirect({ to: "/sign-in" });
+		if (!isAdminRole(session.user.role)) throw redirect({ to: "/dashboard" });
 		return { session };
 	},
+	// Private area — keep the whole admin subtree out of search indexes.
 	head: () => ({
 		meta: [{ name: "robots", content: "noindex, nofollow" }],
 	}),

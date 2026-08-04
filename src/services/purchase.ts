@@ -5,6 +5,9 @@
  * Adapters (Stripe/Creem/NowPayments) call `markPurchasePaid` after verifying
  * the webhook; they never invent balances or entitlements.
  */
+// Type-only: erased at build, so this stays framework-agnostic. It is the same
+// JSON shape the audit column stores, named once rather than twice.
+import type { JsonValue } from "@/db/platform.schema";
 
 export type PurchaseProvider = "stripe" | "creem" | "nowpayments";
 
@@ -29,10 +32,10 @@ export type MarkPurchasePaidResult =
 	| { status: "not_pending"; purchase: Purchase }
 	| { status: "amount_mismatch"; purchase: Purchase };
 
-export type PurchaseAuditEntry = {
+type PurchaseAuditEntry = {
 	action: "purchase.paid" | "purchase.failed" | "purchase.duplicate_ignored";
 	targetId?: string;
-	detail?: Record<string, unknown>;
+	detail?: Record<string, JsonValue>;
 };
 
 /**

@@ -46,6 +46,16 @@ export type CreateOAuthClientInput = z.infer<
 	typeof createOAuthClientInputSchema
 >;
 
+/**
+ * Written as mutable arrays, not `as const` tuples: the provider's registration
+ * body declares these as writable arrays of enum members, and a `readonly`
+ * tuple is not assignable to one. Fresh arrays per call so a caller cannot
+ * reach back through the returned body and edit a shared literal.
+ */
+type GrantType = "authorization_code" | "refresh_token";
+const grantTypes = (): GrantType[] => ["authorization_code", "refresh_token"];
+const responseTypes = (): Array<"code"> => ["code"];
+
 export function oauthClientRegistrationBody(input: CreateOAuthClientInput) {
 	if (input.publicClient) {
 		return {
@@ -54,8 +64,8 @@ export function oauthClientRegistrationBody(input: CreateOAuthClientInput) {
 			type: "native" as const,
 			token_endpoint_auth_method: "none" as const,
 			require_pkce: true,
-			grant_types: ["authorization_code", "refresh_token"] as const,
-			response_types: ["code"] as const,
+			grant_types: grantTypes(),
+			response_types: responseTypes(),
 			skip_consent: false,
 			scope: input.scope,
 			enable_end_session: true,
@@ -66,8 +76,8 @@ export function oauthClientRegistrationBody(input: CreateOAuthClientInput) {
 		redirect_uris: input.redirectUris,
 		token_endpoint_auth_method: "client_secret_post" as const,
 		require_pkce: true,
-		grant_types: ["authorization_code", "refresh_token"] as const,
-		response_types: ["code"] as const,
+		grant_types: grantTypes(),
+		response_types: responseTypes(),
 		skip_consent: false,
 		scope: input.scope,
 		enable_end_session: true,
