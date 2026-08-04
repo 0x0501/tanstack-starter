@@ -13,7 +13,7 @@ import {
 	revokeUserCredentials,
 } from "@/services/admin-security";
 import { applyAdminUserUpdate, listAdminUsers } from "@/services/admin-users";
-import { validated } from "@/utils/api-error";
+import { HttpError, validated } from "@/utils/api-error";
 
 const listSchema = z.object({
 	page: z.number().int().min(0).default(0),
@@ -57,10 +57,20 @@ export const updateUser = createServerFn({ method: "POST" })
 			.from(user)
 			.where(eq(user.id, data.userId))
 			.limit(1);
-		if (!current) throw new Error("User not found.");
+		if (!current) {
+			throw new HttpError({
+				status: 404,
+				error: "not_found",
+				message: "User not found.",
+			});
+		}
 
 		if (data.banned && !current.banned && actorId === data.userId) {
-			throw new Error("You cannot ban your own account.");
+			throw new HttpError({
+				status: 403,
+				error: "forbidden",
+				message: "You cannot ban your own account.",
+			});
 		}
 		assertAdminMayActOn({
 			actorId,
