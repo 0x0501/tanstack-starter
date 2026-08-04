@@ -55,7 +55,7 @@ function Home() {
 
 				<nav
 					className="mt-8 flex flex-wrap items-center gap-3"
-					aria-label="Primary"
+					aria-label={m.nav_primary()}
 					data-testid="home-nav"
 				>
 					<Link

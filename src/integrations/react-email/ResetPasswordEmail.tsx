@@ -11,44 +11,44 @@ import {
 	Text,
 } from "@react-email/components";
 
+import * as m from "@/paraglide/messages";
 import * as s from "./theme.ts";
 
+/** See `VerifyEmail` for why `locale` is a prop rather than ambient state. */
 export function ResetPasswordEmail({
 	url,
 	name,
 	brandName,
+	locale,
 }: {
 	url: string;
 	name?: string;
 	brandName: string;
+	locale?: "en" | "de";
 }) {
+	const opts = { locale };
 	return (
-		<Html>
+		<Html lang={locale ?? "en"}>
 			<Head />
-			<Preview>Reset your {brandName} password</Preview>
+			<Preview>{m.email_reset_preview({ brand: brandName }, opts)}</Preview>
 			<Body style={s.main}>
 				<Container style={s.container}>
 					<Text style={s.wordmark}>{brandName}</Text>
-					<Heading style={s.heading}>Reset your password</Heading>
+					<Heading style={s.heading}>{m.email_reset_heading({}, opts)}</Heading>
 					<Text style={s.text}>
-						{name ? `Hello, ${name}. ` : "Hello. "}
-						We received a request to reset your {brandName} password. Choose a
-						new one with the button below. This link expires in one hour.
+						{name
+							? m.email_reset_body_named({ name, brand: brandName }, opts)
+							: m.email_reset_body({ brand: brandName }, opts)}
 					</Text>
 					<Section style={{ textAlign: "center", margin: "32px 0 4px" }}>
 						<Button href={url} style={s.button}>
-							Reset password
+							{m.email_reset_cta({}, opts)}
 						</Button>
 					</Section>
-					<Text style={s.text}>
-						If the button does not work, paste this link into your browser:
-					</Text>
+					<Text style={s.text}>{m.email_link_fallback({}, opts)}</Text>
 					<Text style={s.linkText}>{url}</Text>
 					<Hr style={s.hr} />
-					<Text style={s.footer}>
-						If you did not request a password reset, you can safely ignore this
-						email; your password will not change.
-					</Text>
+					<Text style={s.footer}>{m.email_reset_footer({}, opts)}</Text>
 				</Container>
 			</Body>
 		</Html>

@@ -16,33 +16,36 @@ function AdminAuditPage() {
 
 	return (
 		<AdminShell title={m.admin_audit_title()}>
-			{isLoading ? <p className="text-sm text-neutral-500">Loading…</p> : null}
+			{isLoading ? (
+				<p className="text-sm text-muted-foreground">{m.common_loading()}</p>
+			) : null}
 			{error ? (
 				<p className="text-sm text-red-600" role="alert">
 					{(error as Error).message}
 				</p>
 			) : null}
 			{data && data.length === 0 ? (
-				<p className="text-sm text-neutral-600">No audit events yet.</p>
+				<p className="text-sm text-muted-foreground">{m.admin_audit_empty()}</p>
 			) : null}
 			{data && data.length > 0 ? (
 				<div className="overflow-x-auto">
 					<table className="w-full min-w-[40rem] border-collapse text-left text-sm">
 						<thead>
-							<tr className="border-b border-neutral-200 dark:border-neutral-800">
-								<th className="py-2 pr-3 font-medium">When</th>
-								<th className="py-2 pr-3 font-medium">Action</th>
-								<th className="py-2 pr-3 font-medium">Actor</th>
-								<th className="py-2 pr-3 font-medium">Target</th>
-								<th className="py-2 font-medium">Detail</th>
+							<tr className="border-b border-border">
+								<th className="py-2 pr-3 font-medium">{m.admin_col_when()}</th>
+								<th className="py-2 pr-3 font-medium">
+									{m.admin_col_action()}
+								</th>
+								<th className="py-2 pr-3 font-medium">{m.admin_col_actor()}</th>
+								<th className="py-2 pr-3 font-medium">
+									{m.admin_col_target()}
+								</th>
+								<th className="py-2 font-medium">{m.admin_col_detail()}</th>
 							</tr>
 						</thead>
 						<tbody>
 							{data.map((row) => (
-								<tr
-									key={row.id}
-									className="border-b border-neutral-100 dark:border-neutral-900"
-								>
+								<tr key={row.id} className="border-b border-border">
 									<td className="py-2 pr-3 whitespace-nowrap text-xs">
 										{row.createdAt}
 									</td>
@@ -53,7 +56,7 @@ function AdminAuditPage() {
 									<td className="py-2 pr-3 font-mono text-xs">
 										{row.targetType}:{row.targetId ?? "—"}
 									</td>
-									<td className="py-2 font-mono text-xs text-neutral-600">
+									<td className="py-2 font-mono text-xs text-muted-foreground">
 										{row.detail ? JSON.stringify(row.detail) : "—"}
 									</td>
 								</tr>

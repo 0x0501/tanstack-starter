@@ -89,13 +89,13 @@ function AdminUsersPage() {
 			<div className="mb-4 flex flex-wrap gap-2">
 				<input
 					className={`${inputClass} max-w-xs`}
-					placeholder="Search email or name"
+					placeholder={m.admin_users_search_placeholder()}
 					value={search}
 					onChange={(e) => setSearch(e.target.value)}
 				/>
 			</div>
 			{isLoading ? (
-				<p className="text-sm text-muted-foreground">Loading…</p>
+				<p className="text-sm text-muted-foreground">{m.common_loading()}</p>
 			) : null}
 			{error ? (
 				<p className="text-sm text-destructive" role="alert">
@@ -107,11 +107,15 @@ function AdminUsersPage() {
 					<table className="w-full min-w-[40rem] text-left text-sm">
 						<thead>
 							<tr className="border-b border-border">
-								<th className="px-3 py-2 font-medium">Email</th>
-								<th className="px-3 py-2 font-medium">Name</th>
-								<th className="px-3 py-2 font-medium">Role</th>
-								<th className="px-3 py-2 font-medium">Status</th>
-								<th className="px-3 py-2 font-medium">Actions</th>
+								<th className="px-3 py-2 font-medium">{m.admin_col_email()}</th>
+								<th className="px-3 py-2 font-medium">{m.admin_col_name()}</th>
+								<th className="px-3 py-2 font-medium">{m.admin_col_role()}</th>
+								<th className="px-3 py-2 font-medium">
+									{m.admin_col_status()}
+								</th>
+								<th className="px-3 py-2 font-medium">
+									{m.admin_col_actions()}
+								</th>
 							</tr>
 						</thead>
 						<tbody>

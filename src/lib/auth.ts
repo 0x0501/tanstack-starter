@@ -5,7 +5,10 @@ import { passkey } from "@better-auth/passkey";
 import { APIError, betterAuth } from "better-auth";
 import { admin, captcha, emailOTP, jwt, twoFactor } from "better-auth/plugins";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
+import { eq } from "drizzle-orm";
 import type { Database } from "@/db";
+// Aliased: `user` is already the member role imported from ./permissions.
+import { user as userTable } from "@/db/schema";
 import { env } from "@/env";
 import { CAPTCHA_ENDPOINTS, DISABLED_AUTH_PATHS } from "@/lib/auth-paths";
 import { CAPTCHA_ENABLED } from "@/lib/captcha";
@@ -24,15 +27,15 @@ import { existingEmailSignup } from "./auth-plugins/existing-email-signup";
 import { fieldRules } from "./auth-plugins/field-rules";
 import { socialTwoFactor } from "./auth-plugins/social-two-factor";
 import {
-	sendPasswordOtpEmail,
-	sendResetPasswordEmail,
-	sendVerificationEmail,
-} from "./email";
-import {
 	ACCESS_TOKEN_TTL_SEC,
 	DAY,
 	EMAIL_VERIFICATION_EXPIRES_IN_SEC,
 } from "./auth-timing";
+import {
+	sendPasswordOtpEmail,
+	sendResetPasswordEmail,
+	sendVerificationEmail,
+} from "./email";
 import { issuerFromAuthUrl } from "./oauth-metadata";
 import { ac, admin as adminRole, superadmin, user } from "./permissions";
 import { userUpdateGuard } from "./user-update-guard";
@@ -102,6 +105,7 @@ export function createAuth(db: Database) {
 					to: u.email,
 					url,
 					name: u.name,
+					locale: (u as { locale?: string | null }).locale,
 				});
 			},
 		},
@@ -115,6 +119,7 @@ export function createAuth(db: Database) {
 					to: u.email,
 					url,
 					name: u.name,
+					locale: (u as { locale?: string | null }).locale,
 				});
 			},
 		},
@@ -238,9 +243,22 @@ export function createAuth(db: Database) {
 			}),
 			emailOTP({
 				async sendVerificationOTP({ email, otp, type }) {
-					if (type === "forget-password" || type === "sign-in") {
-						await sendPasswordOtpEmail({ to: email, otp, type });
-					}
+					if (type !== "forget-password" && type !== "sign-in") return;
+					// This callback is handed an address, not a user, so the
+					// recipient's language costs one indexed lookup. An address with
+					// no account still gets a code (that is the plugin's own
+					// enumeration defence) — it just gets it in the base locale.
+					const [row] = await db
+						.select({ locale: userTable.locale })
+						.from(userTable)
+						.where(eq(userTable.email, email))
+						.limit(1);
+					await sendPasswordOtpEmail({
+						to: email,
+						otp,
+						type,
+						locale: row?.locale,
+					});
 				},
 			}),
 			passkey({
