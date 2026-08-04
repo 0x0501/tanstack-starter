@@ -1,6 +1,6 @@
 /** Shared auth / OAuth issuer timing constants (seconds). */
 
-export const HOUR = 60 * 60;
+const HOUR = 60 * 60;
 export const DAY = 24 * HOUR;
 
 /** OAuth access-token lifetime — single source for issuer config and helpers. */

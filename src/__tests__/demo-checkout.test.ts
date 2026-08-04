@@ -81,7 +81,7 @@ describe("startDemoCheckout", () => {
 				createPendingPurchase: createPending,
 				createHostedSession: createHosted,
 			}),
-			{ userId: "u1", provider: "stripe" },
+			{ userId: "u1", userEmail: "u1@example.test", provider: "stripe" },
 		);
 
 		expect(result).toEqual({
@@ -94,6 +94,9 @@ describe("startDemoCheckout", () => {
 		expect(createHosted).toHaveBeenCalledWith({
 			provider: "stripe",
 			userId: "u1",
+			// Providers bill an address, not an id — a session created without it
+			// is the difference between a receipt and a silent orphan charge.
+			userEmail: "u1@example.test",
 			amount: DEMO_CHECKOUT_AMOUNT_MINOR,
 			currency: "usd",
 		});
@@ -117,7 +120,7 @@ describe("startDemoCheckout", () => {
 				}),
 				createPendingPurchase: createPending,
 			}),
-			{ userId: "u1", provider: "stripe" },
+			{ userId: "u1", userEmail: "u1@example.test", provider: "stripe" },
 		);
 		expect(result).toEqual({ ok: false, code: "disabled" });
 		expect(createPending).not.toHaveBeenCalled();
@@ -130,7 +133,7 @@ describe("startDemoCheckout", () => {
 				isConfigured: () => false,
 				createPendingPurchase: createPending,
 			}),
-			{ userId: "u1", provider: "stripe" },
+			{ userId: "u1", userEmail: "u1@example.test", provider: "stripe" },
 		);
 		expect(result).toEqual({ ok: false, code: "not_configured" });
 		expect(createPending).not.toHaveBeenCalled();

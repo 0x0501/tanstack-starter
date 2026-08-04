@@ -3,7 +3,7 @@
  * Not a second design system — black/white neutrals only; clones re-skin via CSS variables.
  */
 
-export const fieldControlClass =
+const fieldControlClass =
 	"flex h-9 w-full rounded border border-input bg-background px-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50";
 
 export const buttonPrimaryClass =
