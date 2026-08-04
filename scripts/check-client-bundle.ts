@@ -11,12 +11,32 @@ const CLIENT_DIST = join(ROOT, "dist", "client");
 const ENV_FILES = [join(ROOT, ".env"), join(ROOT, ".env.prod")];
 const TEXT = /\.(js|mjs|css|html|json|txt|map)$/;
 
+/**
+ * A marker only earns its place if it can fire on a *bundled, minified*
+ * artifact. Module specifiers (`drizzle-orm`) and local identifiers
+ * (`betterAuth`) are erased by bundling, so a marker written against them
+ * reports "ok" forever. The schema-shaped markers below are written against
+ * strings that survive: `Symbol.for("drizzle:…")` keys, property names, and
+ * SQL text baked into policy definitions.
+ *
+ * Verify a new marker by building a tree that genuinely leaks and watching it
+ * fail — a green run against an artifact that never contained the thing proves
+ * nothing.
+ */
 const MARKERS: [string, RegExp][] = [
 	["cloudflare:workers import", /cloudflare:workers/],
 	["node:async_hooks", /node:async_hooks|async_hooks/],
 	["server function factory", /createServerFn/],
 	["Hyperdrive binding", /HYPERDRIVE/],
 	["drizzle ORM", /drizzle-orm/],
+	// Drizzle brands every table object with these Symbol.for keys, so they
+	// survive minification and are present whenever a table definition — and
+	// with it every table and column name — reaches the browser.
+	["drizzle table definitions", /drizzle:(?:entityKind|Name|Columns|Schema)/],
+	["drizzle pg table class", /\bPgTable\b/],
+	// Policy predicates ship as SQL string literals. Leaking them tells a reader
+	// which GUC the RLS bypass trusts and what the predicate is.
+	["RLS policy definition", /app_private\.|rls_(?:policy|user_read|service_write)/],
 	["postgres driver", /node-postgres|pg-connection-string/],
 	["postgres connection string", /postgres(?:ql)?:\/\//],
 	["better-auth server factory", /betterAuth\(/],
