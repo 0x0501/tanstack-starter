@@ -14,8 +14,15 @@ import {
 	getOAuthClients,
 } from "@/server/oauth-clients";
 
+const clientsQuery = {
+	queryKey: ["oauth-clients"],
+	queryFn: () => getOAuthClients(),
+};
+
 export const Route = createFileRoute("/admin/oauth-apps")({
 	component: AdminOAuthAppsPage,
+	// The client list is the whole page: nothing renders without it.
+	loader: ({ context }) => context.queryClient.ensureQueryData(clientsQuery),
 });
 
 function AdminOAuthAppsPage() {
@@ -26,10 +33,7 @@ function AdminOAuthAppsPage() {
 	);
 	const [createdSecret, setCreatedSecret] = useState<string | null>(null);
 
-	const { data, isLoading, error } = useQuery({
-		queryKey: ["oauth-clients"],
-		queryFn: () => getOAuthClients(),
-	});
+	const { data, isLoading, error } = useQuery(clientsQuery);
 
 	const createMut = useMutation({
 		mutationFn: () =>

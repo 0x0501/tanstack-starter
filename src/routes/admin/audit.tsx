@@ -4,15 +4,19 @@ import { AdminShell } from "@/components/shells";
 import * as m from "@/paraglide/messages";
 import { listAuditEvents } from "@/server/admin-audit";
 
+const auditQuery = {
+	queryKey: ["admin-audit"],
+	queryFn: () => listAuditEvents({ data: { limit: 100 } }),
+};
+
 export const Route = createFileRoute("/admin/audit")({
 	component: AdminAuditPage,
+	// The trail is the whole page: nothing renders without it.
+	loader: ({ context }) => context.queryClient.ensureQueryData(auditQuery),
 });
 
 function AdminAuditPage() {
-	const { data, isLoading, error } = useQuery({
-		queryKey: ["admin-audit"],
-		queryFn: () => listAuditEvents({ data: { limit: 100 } }),
-	});
+	const { data, isLoading, error } = useQuery(auditQuery);
 
 	return (
 		<AdminShell title={m.admin_audit_title()}>
