@@ -10,30 +10,35 @@ import {
 	updatePaymentMethodToggles,
 } from "@/server/payment-toggles";
 
+const usersQuery = (search: string) => ({
+	queryKey: ["admin-users", search],
+	queryFn: () =>
+		getUsers({ data: { page: 0, pageSize: 50, search, filters: {} } }),
+});
+
+const togglesQuery = {
+	queryKey: ["payment-toggles"],
+	queryFn: () => getPaymentMethodToggles(),
+};
+
 export const Route = createFileRoute("/admin/users")({
 	component: AdminUsersPage,
+	// The list is the page; the payment toggles are a panel beside it, so they
+	// are warmed rather than awaited — the user list already sorts on an
+	// unindexed column, and blocking navigation on both means waiting for the
+	// slower one twice over.
+	loader: async ({ context }) => {
+		context.queryClient.ensureQueryData(togglesQuery);
+		await context.queryClient.ensureQueryData(usersQuery(""));
+	},
 });
 
 function AdminUsersPage() {
 	const qc = useQueryClient();
 	const [search, setSearch] = useState("");
-	const { data, isLoading, error } = useQuery({
-		queryKey: ["admin-users", search],
-		queryFn: () =>
-			getUsers({
-				data: {
-					page: 0,
-					pageSize: 50,
-					search,
-					filters: {},
-				},
-			}),
-	});
+	const { data, isLoading, error } = useQuery(usersQuery(search));
 
-	const toggles = useQuery({
-		queryKey: ["payment-toggles"],
-		queryFn: () => getPaymentMethodToggles(),
-	});
+	const toggles = useQuery(togglesQuery);
 
 	const mutation = useMutation({
 		mutationFn: (input: {

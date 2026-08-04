@@ -15,8 +15,19 @@ import {
 } from "@/server/demo-checkout";
 import { cn } from "@/utils/cn";
 
+const methodsQuery = {
+	queryKey: ["demo-checkout-methods"],
+	queryFn: () => getDemoCheckoutMethods(),
+};
+
 export const Route = createFileRoute("/dashboard/")({
 	component: DashboardOverview,
+	// Warmed, not awaited: the overview renders its identity and status panels
+	// from the route context alone, so blocking on the checkout methods would
+	// delay a page that has something to show without them.
+	loader: ({ context }) => {
+		context.queryClient.ensureQueryData(methodsQuery);
+	},
 });
 
 function DashboardOverview() {
@@ -24,10 +35,7 @@ function DashboardOverview() {
 	const u = session.user;
 	const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
-	const methods = useQuery({
-		queryKey: ["demo-checkout-methods"],
-		queryFn: () => getDemoCheckoutMethods(),
-	});
+	const methods = useQuery(methodsQuery);
 
 	const start = useMutation({
 		mutationFn: (provider: "stripe" | "creem" | "nowpayments") =>

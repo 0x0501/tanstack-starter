@@ -38,18 +38,23 @@ import { accountSecurityErrorMessage } from "@/utils/auth-errors";
 /** One key for the page: profile, security, passkeys and sessions load together. */
 const SECURITY_OVERVIEW_KEY = ["security-overview"] as const;
 
+const overviewQuery = {
+	queryKey: SECURITY_OVERVIEW_KEY,
+	queryFn: () => getSecurityOverview(),
+};
+
 export const Route = createFileRoute("/dashboard/account")({
 	component: AccountPage,
+	// Every panel on the page reads this one payload, so there is nothing to
+	// render before it resolves.
+	loader: ({ context }) => context.queryClient.ensureQueryData(overviewQuery),
 });
 
 function AccountPage() {
 	// `/dashboard` narrowed `session` to signed-in for this whole subtree.
 	const { session } = Route.useRouteContext();
 	const qc = useQueryClient();
-	const overview = useQuery({
-		queryKey: SECURITY_OVERVIEW_KEY,
-		queryFn: () => getSecurityOverview(),
-	});
+	const overview = useQuery(overviewQuery);
 
 	const sessionLocale =
 		(session.user as { locale?: string | null }).locale ?? "en";
