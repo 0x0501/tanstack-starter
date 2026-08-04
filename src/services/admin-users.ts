@@ -90,7 +90,7 @@ export type AdminUserUpdateData = {
 
 export type AdminUserAuthApi = {
 	setRole(args: {
-		body: { userId: string; role: string };
+		body: { userId: string; role: AdminUserRole };
 		headers: HeadersInit;
 	}): Promise<unknown>;
 	banUser(args: {
