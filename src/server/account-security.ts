@@ -13,6 +13,7 @@ import {
 	requestPasswordChangeOtp,
 	requestReauthOtp,
 } from "@/services/account-security";
+import { validated } from "@/utils/api-error";
 import { MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH } from "@/utils/input-rules";
 
 // Security-page server functions. betterAuthMiddleware only — auth.api runs on
@@ -87,7 +88,7 @@ export const requestPasswordOtp = createServerFn({ method: "POST" })
 
 export const verifyPasswordOtp = createServerFn({ method: "POST" })
 	.middleware([betterAuthMiddleware])
-	.validator(z.object({ otp: z.string().trim().min(1).max(16) }))
+	.validator(validated(z.object({ otp: z.string().trim().min(1).max(16) })))
 	.handler(({ context, data }) =>
 		checkPasswordChangeOtp(context.auth, getRequestHeaders(), data),
 	);
@@ -95,10 +96,15 @@ export const verifyPasswordOtp = createServerFn({ method: "POST" })
 export const confirmPasswordChange = createServerFn({ method: "POST" })
 	.middleware([betterAuthMiddleware])
 	.validator(
-		z.object({
-			otp: z.string().trim().min(1).max(16),
-			newPassword: z.string().min(MIN_PASSWORD_LENGTH).max(MAX_PASSWORD_LENGTH),
-		}),
+		validated(
+			z.object({
+				otp: z.string().trim().min(1).max(16),
+				newPassword: z
+					.string()
+					.min(MIN_PASSWORD_LENGTH)
+					.max(MAX_PASSWORD_LENGTH),
+			}),
+		),
 	)
 	.handler(({ context, data }) =>
 		changePasswordWithOtp(context.auth, getRequestHeaders(), data),
@@ -113,10 +119,12 @@ export const requestReauthCode = createServerFn({ method: "POST" })
 export const confirmReauth = createServerFn({ method: "POST" })
 	.middleware([betterAuthMiddleware])
 	.validator(
-		z.object({
-			code: z.string().trim().min(1).max(32),
-			backupCode: z.boolean().optional(),
-		}),
+		validated(
+			z.object({
+				code: z.string().trim().min(1).max(32),
+				backupCode: z.boolean().optional(),
+			}),
+		),
 	)
 	.handler(({ context, data }) =>
 		reauthenticate(context.auth, getRequestHeaders(), data),
@@ -124,7 +132,7 @@ export const confirmReauth = createServerFn({ method: "POST" })
 
 export const beginTwoFactorEnable = createServerFn({ method: "POST" })
 	.middleware([betterAuthMiddleware])
-	.validator(z.object({ otp: z.string().trim().min(1).max(16) }))
+	.validator(validated(z.object({ otp: z.string().trim().min(1).max(16) })))
 	.handler(({ context, data }) =>
 		enableTwoFactorWithOtp(context.auth, getRequestHeaders(), data),
 	);
@@ -136,21 +144,21 @@ const secondFactorInput = z.object({
 
 export const disableTwoFactor = createServerFn({ method: "POST" })
 	.middleware([betterAuthMiddleware])
-	.validator(secondFactorInput)
+	.validator(validated(secondFactorInput))
 	.handler(({ context, data }) =>
 		disableTwoFactorWithCode(context.auth, getRequestHeaders(), data),
 	);
 
 export const regenerateBackupCodes = createServerFn({ method: "POST" })
 	.middleware([betterAuthMiddleware])
-	.validator(secondFactorInput)
+	.validator(validated(secondFactorInput))
 	.handler(({ context, data }) =>
 		regenerateBackupCodesWithCode(context.auth, getRequestHeaders(), data),
 	);
 
 export const removePasskey = createServerFn({ method: "POST" })
 	.middleware([betterAuthMiddleware])
-	.validator(z.object({ passkeyId: z.string().trim().min(1) }))
+	.validator(validated(z.object({ passkeyId: z.string().trim().min(1) })))
 	.handler(({ context, data }) =>
 		removePasskeyWithFreshSession(context.auth, getRequestHeaders(), data),
 	);

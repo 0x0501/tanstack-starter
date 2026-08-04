@@ -5,6 +5,7 @@ import { env } from "@/env";
 import { verifyStripeSignature } from "@/services/payments-verify";
 import { markPurchasePaid } from "@/services/purchase";
 import { createPurchasePort } from "@/services/purchase-db";
+import { methodNotAllowed } from "@/utils/api-error";
 import {
 	BodyTooLargeError,
 	readTextCapped,
@@ -16,6 +17,7 @@ const MAX_BODY = 64 * 1024;
 export const Route = createFileRoute("/api/webhooks/stripe")({
 	server: {
 		handlers: {
+			GET: () => methodNotAllowed("POST"),
 			POST: async ({ request }) => {
 				if (!env.STRIPE_WEBHOOK_SECRET) {
 					return new Response("Stripe not configured", { status: 503 });

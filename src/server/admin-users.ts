@@ -13,6 +13,7 @@ import {
 	revokeUserCredentials,
 } from "@/services/admin-security";
 import { applyAdminUserUpdate, listAdminUsers } from "@/services/admin-users";
+import { validated } from "@/utils/api-error";
 
 const listSchema = z.object({
 	page: z.number().int().min(0).default(0),
@@ -29,19 +30,21 @@ const listSchema = z.object({
 
 export const getUsers = createServerFn({ method: "GET" })
 	.middleware([databaseMiddleware, adminMiddleware])
-	.validator(listSchema)
+	.validator(validated(listSchema))
 	.handler(({ context, data }) => listAdminUsers(context.db, data));
 
 export const updateUser = createServerFn({ method: "POST" })
 	.middleware([databaseMiddleware, adminMiddleware])
 	.validator(
-		z.object({
-			userId: z.string().min(1),
-			emailVerified: z.boolean(),
-			// Superadmin role is not assignable from UI (SQL bootstrap only).
-			role: z.enum(["user", "admin"]).optional(),
-			banned: z.boolean(),
-		}),
+		validated(
+			z.object({
+				userId: z.string().min(1),
+				emailVerified: z.boolean(),
+				// Superadmin role is not assignable from UI (SQL bootstrap only).
+				role: z.enum(["user", "admin"]).optional(),
+				banned: z.boolean(),
+			}),
+		),
 	)
 	.handler(async ({ context, data }) => {
 		const actorId = context.session.user.id;

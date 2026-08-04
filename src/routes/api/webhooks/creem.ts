@@ -5,6 +5,7 @@ import { env } from "@/env";
 import { verifyCreemSignature } from "@/services/payments-verify";
 import { markPurchasePaid } from "@/services/purchase";
 import { createPurchasePort } from "@/services/purchase-db";
+import { methodNotAllowed } from "@/utils/api-error";
 import {
 	BodyTooLargeError,
 	readTextCapped,
@@ -16,6 +17,7 @@ const MAX_BODY = 64 * 1024;
 export const Route = createFileRoute("/api/webhooks/creem")({
 	server: {
 		handlers: {
+			GET: () => methodNotAllowed("POST"),
 			POST: async ({ request }) => {
 				if (!env.CREEM_WEBHOOK_SECRET) {
 					return new Response("Creem not configured", { status: 503 });

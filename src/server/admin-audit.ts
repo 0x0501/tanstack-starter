@@ -4,13 +4,16 @@ import { z } from "zod";
 import { adminAction } from "@/db/schema";
 import { adminMiddleware } from "@/middlewares/admin";
 import { databaseMiddleware } from "@/middlewares/database";
+import { validated } from "@/utils/api-error";
 
 export const listAuditEvents = createServerFn({ method: "GET" })
 	.middleware([databaseMiddleware, adminMiddleware])
 	.validator(
-		z.object({
-			limit: z.number().int().min(1).max(200).default(50),
-		}),
+		validated(
+			z.object({
+				limit: z.number().int().min(1).max(200).default(50),
+			}),
+		),
 	)
 	.handler(async ({ context, data }) => {
 		const rows = await context.db
