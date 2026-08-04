@@ -95,7 +95,11 @@ export type Violation = {
 	file: string;
 	line: number;
 	symbol: string;
-	kind: "missing-post" | "missing-validator" | "returned-refusal";
+	kind:
+		| "missing-post"
+		| "missing-validator"
+		| "bare-validator"
+		| "returned-refusal";
 	detail: string;
 };
 
@@ -217,6 +221,19 @@ export function findServerFnViolations(root: string = ROOT): Violation[] {
 			declaration,
 		);
 		const declaresValidator = /\.validator\(/.test(declaration);
+		// A schema handed straight to `.validator()` leaves the framework's
+		// `execValidator` to throw — an `Error` whose message is a JSON dump of
+		// zod's issues, carrying no `.status`. `validated()` turns that into a
+		// 400 like every other refusal, so it is the only accepted form.
+		// Matched by walking each occurrence rather than one lookahead: `\s*`
+		// backtracks, so `.validator(\n\tvalidated(` would satisfy a negative
+		// lookahead placed after it and report every wrapped call as bare.
+		const bareValidator = [...declaration.matchAll(/\.validator\(\s*/g)].some(
+			(hit) =>
+				!declaration
+					.slice((hit.index ?? 0) + hit[0].length)
+					.startsWith("validated("),
+		);
 		// The handler destructures `data` only when it takes input.
 		const acceptsInput = /\.handler\(\s*(?:async\s*)?\(\s*\{[^}]*\bdata\b/.test(
 			declaration,
@@ -238,6 +255,16 @@ export function findServerFnViolations(root: string = ROOT): Violation[] {
 				symbol: name,
 				kind: "missing-validator",
 				detail: "accepts input but declares no .validator()",
+			});
+		}
+		if (bareValidator) {
+			violations.push({
+				file: home.file,
+				line: declLine,
+				symbol: name,
+				kind: "bare-validator",
+				detail:
+					"passes a schema straight to .validator() — wrap it in validated() so a bad field is a 400, not a zod dump",
 			});
 		}
 	}

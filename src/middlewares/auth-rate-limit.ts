@@ -12,7 +12,11 @@ import { authRateLimitKey } from "@/services/auth-rate-limit";
 export const authRateLimitMiddleware = createMiddleware().server(
 	async ({ next, request }) => {
 		const limiter = (
-			env as { AUTH_RATE_LIMITER?: { limit: (o: { key: string }) => Promise<{ success: boolean }> } }
+			env as {
+				AUTH_RATE_LIMITER?: {
+					limit: (o: { key: string }) => Promise<{ success: boolean }>;
+				};
+			}
 		).AUTH_RATE_LIMITER;
 		const key = limiter ? authRateLimitKey(request) : null;
 		if (limiter && key) {

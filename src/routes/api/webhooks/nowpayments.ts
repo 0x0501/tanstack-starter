@@ -5,6 +5,7 @@ import { env } from "@/env";
 import { verifyNowPaymentsSignature } from "@/services/payments-verify";
 import { markPurchasePaid } from "@/services/purchase";
 import { createPurchasePort } from "@/services/purchase-db";
+import { methodNotAllowed } from "@/utils/api-error";
 import {
 	BodyTooLargeError,
 	readTextCapped,
@@ -19,6 +20,7 @@ const PAID_STATUSES = new Set(["finished", "confirmed"]);
 export const Route = createFileRoute("/api/webhooks/nowpayments")({
 	server: {
 		handlers: {
+			GET: () => methodNotAllowed("POST"),
 			POST: async ({ request }) => {
 				if (!env.NOW_PAYMENTS_IPN_KEY) {
 					return new Response("NowPayments not configured", { status: 503 });

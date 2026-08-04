@@ -3,6 +3,7 @@
  * Better Auth endpoints accept whatever is posted — so rules that matter live
  * here. Free-form text is hardened, not sanitized.
  */
+import { HttpError } from "@/utils/api-error";
 
 export const MAX_DISPLAY_NAME_LENGTH = 32;
 export const MAX_PASSKEY_NAME_LENGTH = 64;
@@ -45,9 +46,17 @@ function has(value: string, predicate: (cp: number) => boolean): boolean {
 	return false;
 }
 
-export class InvalidFieldError extends Error {
+/**
+ * A broken field rule, as a 400 rather than a bare `Error`.
+ *
+ * Extending `HttpError` is what carries `.status` across the wire (via the
+ * adapter in `src/start.ts`) and what lets `userFacingMessage` show the rule to
+ * the person who broke it. A plain `Error` here would reach the client with its
+ * message stripped, so a refused display name would read as a server fault.
+ */
+export class InvalidFieldError extends HttpError {
 	constructor(message: string) {
-		super(message);
+		super({ status: 400, error: "invalid_param", message });
 		this.name = "InvalidFieldError";
 	}
 }

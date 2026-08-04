@@ -8,6 +8,7 @@ import {
 	oauthClientRegistrationBody,
 } from "@/services/oauth-client";
 import { deleteOAuthClientById } from "@/services/oauth-clients";
+import { validated } from "@/utils/api-error";
 
 type OAuthClientSummary = {
 	clientId: string;
@@ -44,7 +45,7 @@ export const getOAuthClients = createServerFn({ method: "GET" })
 
 export const createOAuthClient = createServerFn({ method: "POST" })
 	.middleware([adminMiddleware])
-	.validator(createOAuthClientInputSchema)
+	.validator(validated(createOAuthClientInputSchema))
 	.handler(async ({ context, data }) => {
 		const client = await context.auth.api.adminCreateOAuthClient({
 			body: oauthClientRegistrationBody(data),
@@ -67,7 +68,7 @@ export const createOAuthClient = createServerFn({ method: "POST" })
 
 export const deleteOAuthClient = createServerFn({ method: "POST" })
 	.middleware([adminMiddleware])
-	.validator(z.object({ clientId: z.string().trim().min(1) }))
+	.validator(validated(z.object({ clientId: z.string().trim().min(1) })))
 	.handler(async ({ context, data }) => {
 		const deleted = await deleteOAuthClientById(context.db, data.clientId);
 		if (deleted) {

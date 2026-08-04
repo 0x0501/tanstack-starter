@@ -8,6 +8,7 @@ import {
 	type PaymentToggles,
 	setPaymentToggles,
 } from "@/services/payment-toggles";
+import { validated } from "@/utils/api-error";
 
 export const getPaymentMethodToggles = createServerFn({ method: "GET" })
 	.middleware([databaseMiddleware, adminMiddleware])
@@ -16,11 +17,13 @@ export const getPaymentMethodToggles = createServerFn({ method: "GET" })
 export const updatePaymentMethodToggles = createServerFn({ method: "POST" })
 	.middleware([databaseMiddleware, adminMiddleware])
 	.validator(
-		z.object({
-			stripe: z.boolean(),
-			creem: z.boolean(),
-			nowpayments: z.boolean(),
-		}),
+		validated(
+			z.object({
+				stripe: z.boolean(),
+				creem: z.boolean(),
+				nowpayments: z.boolean(),
+			}),
+		),
 	)
 	.handler(async ({ context, data }) => {
 		const next = data as PaymentToggles;

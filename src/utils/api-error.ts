@@ -1,3 +1,5 @@
+import type { z } from "zod";
+
 export type APIErrorProp = {
 	status: number;
 	error: string;
@@ -13,6 +15,29 @@ export function APIError({ status, error, message }: APIErrorProp) {
 		},
 		{ status },
 	);
+}
+
+/**
+ * An API route's answer to a method it does not serve.
+ *
+ * Without one, a route that declares only POST leaves a browser's GET to fall
+ * through to the app router, which answers 200 with the whole SPA shell and no
+ * dehydrated router state — so the page loads and then fails to hydrate in the
+ * reader's browser. An API path has to answer as an API (ADR 0010).
+ *
+ * Routes wire this to GET and nothing else, deliberately. GET is the method a
+ * browser sends and the only one that produces the rendered body the failure
+ * needs; HEAD carries none, and answering OPTIONS here would put a 405 in front
+ * of a CORS preflight, which is a different question from this one.
+ */
+export function methodNotAllowed(allow: string) {
+	const response = APIError({
+		status: 405,
+		error: "method_not_allowed",
+		message: `This endpoint accepts ${allow} only.`,
+	});
+	response.headers.set("Allow", allow);
+	return response;
 }
 
 /**
@@ -55,4 +80,50 @@ export class HttpError extends Error {
 export function userFacingMessage(error: unknown, fallback: string): string {
 	if (!(error instanceof HttpError)) return fallback;
 	return error.status >= 400 && error.status < 500 ? error.message : fallback;
+}
+
+/**
+ * What a caller is told when a field breaks a rule nobody wrote out.
+ *
+ * zod's own wording is written for whoever wrote the schema, not for the person
+ * who typed the value: "Invalid string: must match pattern /^\d{4}-\d{2}-\d{2}$/"
+ * hands the reader a regular expression, and "Too small: expected string to have
+ * >=1 characters" reads like a stack frame. Neither may be shown (ADR 0010).
+ */
+const INVALID_INPUT = "That input isn't valid.";
+
+/**
+ * The one way a server function declares its input (ADR 0010).
+ *
+ * `.validator(schema)` and `.validator((d) => schema.parse(d))` both leave the
+ * framework's `execValidator` to throw: the first as an `Error` whose message
+ * is a JSON dump of the schema's issues, the second as a bare `ZodError`.
+ * Neither carries `.status`, so a caller who mistypes a field is shown a dump
+ * written for nobody, and an expected 4xx reaches error reporting as a crash.
+ *
+ * Wrapping the schema makes that refusal a 400 like every other, which is all
+ * it takes — the status is what every downstream filter reads.
+ */
+export function validated<TSchema extends z.ZodType>(
+	schema: TSchema,
+): (input: z.input<TSchema>) => z.output<TSchema> {
+	// Declared as the schema's own input, not `unknown`: the framework reads this
+	// signature to decide whether `data` is required at the call site, and
+	// `unknown` accepts `undefined` — so typing it honestly would quietly make
+	// every wrapped server function's argument optional. Nothing is lost, since
+	// what actually arrives is parsed rather than trusted.
+	return (input: unknown) => {
+		// A message the schema's author wrote outranks this map, and a message zod
+		// would have generated does not — so an authored rule still reaches the
+		// reader while zod's own wording can never be what they see.
+		const parsed = schema.safeParse(input, { error: () => INVALID_INPUT });
+		if (parsed.success) return parsed.data;
+		throw new HttpError({
+			status: 400,
+			error: "invalid_param",
+			// The first issue's message only: its `path`, `code` and the shape of
+			// the rest of the array are internal.
+			message: parsed.error.issues[0]?.message ?? INVALID_INPUT,
+		});
+	};
 }
