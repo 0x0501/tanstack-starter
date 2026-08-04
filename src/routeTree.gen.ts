@@ -30,7 +30,7 @@ import { Route as ApiWebhooksNowpaymentsRouteImport } from './routes/api/webhook
 import { Route as ApiWebhooksCreemRouteImport } from './routes/api/webhooks/creem'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiAuthDotwellKnownOpenidConfigurationRouteImport } from './routes/api/auth/[.]well-known/openid-configuration'
-import { Route as ApiAuthDotwellKnownOauthAuthorizationServerRouteImport } from './routes/api/auth/[.]well-known/oauth-authorization-server'
+import { Route as DotwellKnownOauthAuthorizationServerApiAuthRouteImport } from './routes/[.]well-known/oauth-authorization-server/api/auth'
 
 const TwoFactorRoute = TwoFactorRouteImport.update({
   id: '/two-factor',
@@ -139,10 +139,10 @@ const ApiAuthDotwellKnownOpenidConfigurationRoute =
     path: '/api/auth/.well-known/openid-configuration',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiAuthDotwellKnownOauthAuthorizationServerRoute =
-  ApiAuthDotwellKnownOauthAuthorizationServerRouteImport.update({
-    id: '/api/auth/.well-known/oauth-authorization-server',
-    path: '/api/auth/.well-known/oauth-authorization-server',
+const DotwellKnownOauthAuthorizationServerApiAuthRoute =
+  DotwellKnownOauthAuthorizationServerApiAuthRouteImport.update({
+    id: '/.well-known/oauth-authorization-server/api/auth',
+    path: '/.well-known/oauth-authorization-server/api/auth',
     getParentRoute: () => rootRouteImport,
   } as any)
 
@@ -167,7 +167,7 @@ export interface FileRoutesByFullPath {
   '/api/webhooks/nowpayments': typeof ApiWebhooksNowpaymentsRoute
   '/api/webhooks/stripe': typeof ApiWebhooksStripeRoute
   '/.well-known/oauth-protected-resource/': typeof DotwellKnownOauthProtectedResourceIndexRoute
-  '/api/auth/.well-known/oauth-authorization-server': typeof ApiAuthDotwellKnownOauthAuthorizationServerRoute
+  '/.well-known/oauth-authorization-server/api/auth': typeof DotwellKnownOauthAuthorizationServerApiAuthRoute
   '/api/auth/.well-known/openid-configuration': typeof ApiAuthDotwellKnownOpenidConfigurationRoute
 }
 export interface FileRoutesByTo {
@@ -189,7 +189,7 @@ export interface FileRoutesByTo {
   '/api/webhooks/nowpayments': typeof ApiWebhooksNowpaymentsRoute
   '/api/webhooks/stripe': typeof ApiWebhooksStripeRoute
   '/.well-known/oauth-protected-resource': typeof DotwellKnownOauthProtectedResourceIndexRoute
-  '/api/auth/.well-known/oauth-authorization-server': typeof ApiAuthDotwellKnownOauthAuthorizationServerRoute
+  '/.well-known/oauth-authorization-server/api/auth': typeof DotwellKnownOauthAuthorizationServerApiAuthRoute
   '/api/auth/.well-known/openid-configuration': typeof ApiAuthDotwellKnownOpenidConfigurationRoute
 }
 export interface FileRoutesById {
@@ -214,7 +214,7 @@ export interface FileRoutesById {
   '/api/webhooks/nowpayments': typeof ApiWebhooksNowpaymentsRoute
   '/api/webhooks/stripe': typeof ApiWebhooksStripeRoute
   '/.well-known/oauth-protected-resource/': typeof DotwellKnownOauthProtectedResourceIndexRoute
-  '/api/auth/.well-known/oauth-authorization-server': typeof ApiAuthDotwellKnownOauthAuthorizationServerRoute
+  '/.well-known/oauth-authorization-server/api/auth': typeof DotwellKnownOauthAuthorizationServerApiAuthRoute
   '/api/auth/.well-known/openid-configuration': typeof ApiAuthDotwellKnownOpenidConfigurationRoute
 }
 export interface FileRouteTypes {
@@ -240,7 +240,7 @@ export interface FileRouteTypes {
     | '/api/webhooks/nowpayments'
     | '/api/webhooks/stripe'
     | '/.well-known/oauth-protected-resource/'
-    | '/api/auth/.well-known/oauth-authorization-server'
+    | '/.well-known/oauth-authorization-server/api/auth'
     | '/api/auth/.well-known/openid-configuration'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -262,7 +262,7 @@ export interface FileRouteTypes {
     | '/api/webhooks/nowpayments'
     | '/api/webhooks/stripe'
     | '/.well-known/oauth-protected-resource'
-    | '/api/auth/.well-known/oauth-authorization-server'
+    | '/.well-known/oauth-authorization-server/api/auth'
     | '/api/auth/.well-known/openid-configuration'
   id:
     | '__root__'
@@ -286,7 +286,7 @@ export interface FileRouteTypes {
     | '/api/webhooks/nowpayments'
     | '/api/webhooks/stripe'
     | '/.well-known/oauth-protected-resource/'
-    | '/api/auth/.well-known/oauth-authorization-server'
+    | '/.well-known/oauth-authorization-server/api/auth'
     | '/api/auth/.well-known/openid-configuration'
   fileRoutesById: FileRoutesById
 }
@@ -305,7 +305,7 @@ export interface RootRouteChildren {
   ApiWebhooksNowpaymentsRoute: typeof ApiWebhooksNowpaymentsRoute
   ApiWebhooksStripeRoute: typeof ApiWebhooksStripeRoute
   DotwellKnownOauthProtectedResourceIndexRoute: typeof DotwellKnownOauthProtectedResourceIndexRoute
-  ApiAuthDotwellKnownOauthAuthorizationServerRoute: typeof ApiAuthDotwellKnownOauthAuthorizationServerRoute
+  DotwellKnownOauthAuthorizationServerApiAuthRoute: typeof DotwellKnownOauthAuthorizationServerApiAuthRoute
   ApiAuthDotwellKnownOpenidConfigurationRoute: typeof ApiAuthDotwellKnownOpenidConfigurationRoute
 }
 
@@ -458,11 +458,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthDotwellKnownOpenidConfigurationRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/auth/.well-known/oauth-authorization-server': {
-      id: '/api/auth/.well-known/oauth-authorization-server'
-      path: '/api/auth/.well-known/oauth-authorization-server'
-      fullPath: '/api/auth/.well-known/oauth-authorization-server'
-      preLoaderRoute: typeof ApiAuthDotwellKnownOauthAuthorizationServerRouteImport
+    '/.well-known/oauth-authorization-server/api/auth': {
+      id: '/.well-known/oauth-authorization-server/api/auth'
+      path: '/.well-known/oauth-authorization-server/api/auth'
+      fullPath: '/.well-known/oauth-authorization-server/api/auth'
+      preLoaderRoute: typeof DotwellKnownOauthAuthorizationServerApiAuthRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -516,8 +516,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiWebhooksStripeRoute: ApiWebhooksStripeRoute,
   DotwellKnownOauthProtectedResourceIndexRoute:
     DotwellKnownOauthProtectedResourceIndexRoute,
-  ApiAuthDotwellKnownOauthAuthorizationServerRoute:
-    ApiAuthDotwellKnownOauthAuthorizationServerRoute,
+  DotwellKnownOauthAuthorizationServerApiAuthRoute:
+    DotwellKnownOauthAuthorizationServerApiAuthRoute,
   ApiAuthDotwellKnownOpenidConfigurationRoute:
     ApiAuthDotwellKnownOpenidConfigurationRoute,
 }
