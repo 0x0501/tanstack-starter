@@ -44,10 +44,26 @@ const MARKERS: [string, RegExp][] = [
 	["stripe secret", /\b(?:sk_live_|sk_test_|whsec_)[A-Za-z0-9]{10,}/],
 ];
 
+/**
+ * Keys whose value may legitimately appear client-side, named one at a time.
+ *
+ * Everything else is treated as a secret, so a newly added key is secret by
+ * default. The rule used to be the other way round — only keys *matching*
+ * `SECRET|KEY|TOKEN|PASSWORD|CREDENTIAL|DATABASE` were checked — which silently
+ * exempted anything named for what it is rather than what it holds
+ * (`SENTRY_DSN`, `..._PROXY_URL`, `ADMIN_BOOTSTRAP`).
+ */
+const CLIENT_SAFE_KEYS = new Set([
+	// The site's own public origin: canonical URLs, OG tags and the auth client
+	// all need it in the browser.
+	"APP_ORIGIN",
+	"BETTER_AUTH_URL",
+]);
+
 export function secretValues(
 	envFiles: string[] = ENV_FILES,
 ): [string, string][] {
-	return envFiles
+	const pairs = envFiles
 		.filter((file) => existsSync(file))
 		.flatMap((file) => readFileSync(file, "utf8").split(/\r?\n/))
 		.filter((line) => /^\s*[A-Z0-9_]+=/.test(line))
@@ -59,13 +75,25 @@ export function secretValues(
 				? raw.replace(/^["']|["']$/g, "")
 				: raw.replace(/(^|\s)#.*$/, "").trim();
 			return [key, value] as [string, string];
-		})
-		.filter(
-			([key, value]) =>
-				value.length >= 8 &&
-				!/^(VITE_|PUBLIC_)/.test(key) &&
-				/SECRET|KEY|TOKEN|PASSWORD|CREDENTIAL|DATABASE/.test(key),
-		);
+		});
+
+	// Published on purpose, so their *value* is public wherever it comes from.
+	// A server-side key holding the same string as a `VITE_` one (e.g.
+	// `APP_ORIGIN` and `VITE_APP_ORIGIN`) is not a leak when it shows up.
+	const publicValues = new Set(
+		pairs
+			.filter(([key]) => /^(VITE_|PUBLIC_)/.test(key))
+			.map(([, value]) => value)
+			.filter((value) => value.length > 0),
+	);
+
+	return pairs.filter(
+		([key, value]) =>
+			value.length >= 8 &&
+			!/^(VITE_|PUBLIC_)/.test(key) &&
+			!CLIENT_SAFE_KEYS.has(key) &&
+			!publicValues.has(value),
+	);
 }
 
 function walk(dir: string): string[] {
