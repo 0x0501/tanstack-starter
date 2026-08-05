@@ -1,0 +1,49 @@
+version: 2
+
+# Grouping is not cosmetic here — two ADR-0011 rules make per-package bumps
+# wrong, so the groups below encode them:
+#
+#   * Better Auth core and its official plugins must stay on the same minor
+#     line (ADR-0011 §2). A lone `@better-auth/passkey` bump breaks that.
+#   * The TanStack packages have to agree with each other. `tsr.config.json`
+#     hand-copies the route-tree footer the Start plugin emits, so `router-cli`
+#     and `router-plugin` drifting apart shows up as a route-tree diff in CI
+#     (see AGENTS.md). Moving them together is the only sane upgrade unit.
+#
+# Everything else is grouped for minor/patch and left individual for majors,
+# which deserve to be read one at a time.
+updates:
+  - package-ecosystem: bun
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+      prefix-development: "chore(deps-dev)"
+    groups:
+      tanstack:
+        patterns:
+          - "@tanstack/*"
+      better-auth:
+        patterns:
+          - "better-auth"
+          - "@better-auth/*"
+      minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+
+  # Workflow actions go stale silently: nothing in the repo fails when they do.
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: "ci(deps)"
+    groups:
+      actions:
+        patterns:
+          - "*"
