@@ -38,7 +38,7 @@
 	"dependencies": {
 		"@base-ui/react": "^1.6.0",
 		"@better-auth/drizzle-adapter": "1.6.25",
-		"@better-auth/oauth-provider": "1.6.25",
+		"@better-auth/oauth-provider": "1.6.26",
 		"@better-auth/passkey": "1.6.25",
 		"@cloudflare/vite-plugin": "^1.50.0",
 		"@marsidev/react-turnstile": "^1.5.4",
