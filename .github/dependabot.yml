@@ -29,6 +29,14 @@ updates:
         patterns:
           - "better-auth"
           - "@better-auth/*"
+      # Groups default to version updates only. Without this twin, a security
+      # advisory bumps one plugin alone and the peer range on `better-auth`
+      # makes it unresolvable — the update job just errors out.
+      better-auth-security:
+        applies-to: security-updates
+        patterns:
+          - "better-auth"
+          - "@better-auth/*"
       minor-and-patch:
         patterns:
           - "*"
