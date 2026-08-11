@@ -23,7 +23,10 @@ postgresql://starter_app:starter_app_dev_password@localhost:5432/starter
 
 Postgres **inside** the container always listens on `5432`. Compose maps
 `localhost:${POSTGRES_PORT} → container:5432` (e.g. `5432:5432`).  
-Wrong: `5432:5432` — host connects but nothing answers.
+Wrong: `5433:5433` — the host port is published but the container side is not
+where Postgres listens, so the host connects and nothing answers. To move only
+the host port, set `POSTGRES_PORT=5433` (Compose still maps it to `5432`) and
+update `DATABASE_MIGRATION_URL` plus `hyperdrive[].localConnectionString`.
 
 ## Commands
 
