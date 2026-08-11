@@ -15,7 +15,9 @@ Platform capabilities only — product domain (wallets, marketplaces, etc.) stay
 ```bash
 bun install
 cp .env.example .env
-# Fill BETTER_AUTH_SECRET (and optional social/payment keys)
+# Boots as-is: .env.example ships a dev-only BETTER_AUTH_SECRET placeholder.
+# Add social/payment keys as needed; `bun run validate-prod-env` refuses the
+# placeholder, so a deploy can never inherit it.
 bun run db:up          # Postgres 17 + starter_app role (.env.docker)
 bun run db:migrate     # drizzle migrations via DATABASE_MIGRATION_URL
 bun run db:seed        # local superadmin + user (optional)
@@ -66,6 +68,7 @@ bun run db:seed
 3. Runtime access always goes through the **`HYPERDRIVE`** binding in `wrangler.jsonc`. Local `vite dev` uses `hyperdrive[].localConnectionString` (app role). Production: set a real Hyperdrive config id and a strong app-role password.
 
 `drizzle.config.ts` loads `.env` then `.env.local` (override) for `DATABASE_MIGRATION_URL`.
+
 ### Local seed users
 
 After migrations, seed a **superadmin** and a **user** (verified email/password) for local sign-in:
@@ -162,10 +165,13 @@ Some auth/security form strings remain English literals; clones expand Paraglide
 |---------|------|
 | `bun run dev` | Dev server :3000 |
 | `bun run build` | Production build |
-| `bun run deploy` | Build + wrangler deploy |
-| `bun run test` | Vitest |
-| `bun run check` | Biome |
-| `bun run db:generate` / `db:migrate` | Drizzle |
+| `bun run deploy` | `validate-prod-env` → prod build → client-bundle check → `wrangler deploy` |
+| `bun run test` | Vitest (needs Docker) |
+| `bun run test:e2e` | Playwright |
+| `bun run check` | Biome + raw-SQL and server-fn guardrails |
+| `bun run typecheck` | `tsc --noEmit` |
+| `bun run db:up` / `db:down` / `db:reset` | Local Postgres container |
+| `bun run db:generate` / `db:migrate` / `db:seed` | Drizzle |
 | `bun run generate-routes` | After adding routes |
 
 ## Docs

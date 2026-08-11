@@ -7,7 +7,7 @@
   "tailwind": true,
   "addOnOptions": {
     "drizzle": {
-      "database": "mysql"
+      "database": "postgres"
     }
   },
   "envVarValues": {},
