@@ -40,8 +40,8 @@
 		"@better-auth/drizzle-adapter": "1.6.29",
 		"@better-auth/oauth-provider": "1.6.29",
 		"@better-auth/passkey": "1.6.29",
-		"@cloudflare/vite-plugin": "^1.51.1",
-		"@marsidev/react-turnstile": "^1.5.5",
+		"@cloudflare/vite-plugin": "^1.52.1",
+		"@marsidev/react-turnstile": "^1.6.0",
 		"@react-email/components": "^1.0.12",
 		"@t3-oss/env-core": "^0.13.10",
 		"@tailwindcss/vite": "^4.3.3",
@@ -64,8 +64,8 @@
 		"zod": "^4.3.6"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "2.5.7",
-		"@inlang/paraglide-js": "^2.23.2",
+		"@biomejs/biome": "2.5.8",
+		"@inlang/paraglide-js": "^2.24.1",
 		"@playwright/test": "^1.62.1",
 		"@react-email/ui": "6.9.2",
 		"@rolldown/plugin-babel": "^0.2.3",
@@ -83,11 +83,11 @@
 		"babel-plugin-react-compiler": "^1.0.0",
 		"dotenv": "^17.3.1",
 		"jsdom": "^30.0.1",
-		"tsx": "^4.23.11",
+		"tsx": "^4.23.12",
 		"typescript": "^7.0.2",
 		"vite": "^8.2.1",
 		"vitest": "^4.1.10",
-		"wrangler": "^4.120.0"
+		"wrangler": "^4.123.0"
 	},
 	"pnpm": {
 		"onlyBuiltDependencies": [
