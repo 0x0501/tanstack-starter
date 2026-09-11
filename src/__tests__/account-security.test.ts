@@ -253,6 +253,9 @@ async function enrollTotp(
 		body: { password: OLD_PW },
 		headers,
 	});
+	if (enabled.method !== "totp") {
+		throw new Error("Expected TOTP enrollment.");
+	}
 	const secret = new URL(enabled.totpURI).searchParams.get("secret") ?? "";
 	const verified = await auth.api.verifyTOTP({
 		body: { code: totp(secret) },
