@@ -7,6 +7,9 @@
 	},
 	"scripts": {
 		"dev": "vite dev --port 3000",
+		"mystack": "node packages/mystack/src/cli.mjs",
+		"cli:prepare": "node packages/mystack/scripts/prepare-template.mjs",
+		"test:cli": "SKIP_TESTCONTAINERS=1 vitest run src/__tests__/mystack.test.ts",
 		"generate-routes": "tsr generate",
 		"build": "vite build",
 		"preview": "vite preview",

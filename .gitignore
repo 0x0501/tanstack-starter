@@ -19,3 +19,6 @@ playwright-report/
 blob-report/
 .tokensave
 .serena
+
+# CLI release snapshot; rebuilt by prepack
+/packages/mystack/template/
