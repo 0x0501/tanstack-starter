@@ -1,8 +1,8 @@
+import { Checkbox } from "@base-ui/react/checkbox";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { AdminShell, buttonClass, inputClass } from "@/components/shells";
-import { Checkbox } from "@/components/ui/checkbox";
 import * as m from "@/paraglide/messages";
 import { getUsers, updateUser } from "@/server/admin-users";
 import {
@@ -71,7 +71,8 @@ function AdminUsersPage() {
 					<div className="flex flex-wrap gap-4">
 						{(["stripe", "creem", "nowpayments"] as const).map((key) => (
 							<div key={key} className="inline-flex items-center gap-2">
-								<Checkbox
+								<Checkbox.Root
+									className="ui-checkbox"
 									id={`pay-toggle-${key}`}
 									checked={toggles.data[key]}
 									disabled={toggleMut.isPending}
@@ -81,7 +82,11 @@ function AdminUsersPage() {
 											[key]: checked === true,
 										})
 									}
-								/>
+								>
+									<Checkbox.Indicator className="ui-checkbox-indicator">
+										<span aria-hidden>✓</span>
+									</Checkbox.Indicator>
+								</Checkbox.Root>
 								<label htmlFor={`pay-toggle-${key}`}>{key}</label>
 							</div>
 						))}

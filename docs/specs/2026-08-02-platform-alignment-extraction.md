@@ -1,10 +1,11 @@
 # Spec: Platform alignment via faithful extraction
 
-**Status:** Draft — awaiting human review  
-**Date:** 2026-08-02  
-**Glossary:** `CONTEXT.md`  
-**ADRs:** `0001`–`0011` (see amendments and new ADRs from this work)  
-**Supersedes partial claims in:** `2026-08-01-platform-capabilities.md` definition-of-done where implementation drifted  
+**Status:** Historical remediation — UI policy amended 2026-10-09
+**Date:** 2026-08-02
+**Glossary:** `CONTEXT.md`
+**ADRs:** `0001`–`0011` (see amendments and new ADRs from this work)
+**Current UI policy:** [Headless design](../../DESIGN.md) and amended ADR 0007 supersede the original structure-only styling and motion restrictions. Platform security, wire, OAuth, and i18n contracts remain applicable.
+**Supersedes partial claims in:** `2026-08-01-platform-capabilities.md` definition-of-done where implementation drifted
 
 ---
 
@@ -27,12 +28,12 @@ Clones and maintainers cannot tell whether a file is “proven platform” or �
 
 Treat a **private mature reference platform** (never named in open docs or shippable comments) as the **source of structural truth** for platform capabilities. Work proceeds as:
 
-1. **Extract, do not invent** — for each platform seam, copy the mature pattern with product domain and private identifiers removed; recolor structural CSS only.
-2. **Delete inventiveness** — remove dead wrappers, dual APIs, unused dependencies, and parallel design systems.
+1. **Extract, do not invent** — for each platform seam, copy the mature behavior with product domain and private identifiers removed; presentation is independently customizable under `DESIGN.md`.
+2. **Delete inventiveness** — remove dead wrappers, dual APIs, unused dependencies, and duplicate interaction implementations.
 3. **Restore load-bearing contracts** — wire serialization, OAuth search params, Paraglide URL patterns, auth page capability parity, security headers/cache policy, rate limits, check scripts, production env validation.
 4. **Update CONTEXT + ADRs** so future agents default to extraction fidelity, not greenfield redesign.
 
-After this work, a developer should be able to map every Starter platform module to a proven pattern, with only brand strings, locale set (`en`/`de`), and product-domain absences as deliberate differences.
+After this work, a developer should be able to map every Starter platform module to a proven pattern, while allowing brand strings, locale set (`en`/`de`), product-domain absences, and independent Headless presentation as deliberate differences.
 
 ---
 
@@ -50,7 +51,7 @@ Prefer **existing** seams. Do not introduce new package boundaries. Ideal owners
 | **Purchase fulfillment** | Idempotent paid + single hook | Keep ADR 0004 |
 | **Payment adapters** | Verify webhook/IPN → purchase service | Keep optional rails |
 | **RLS helpers** | Service/user transaction scopes + app role | Keep skeleton |
-| **UI shell** | Composed Base UI controls + structural shells only | **Delete** invented token class banks and dead components |
+| **UI shell** | Headless Base UI + replaceable default presentation | Separate behavior from theme/layout/motion; delete pass-through wrappers and dead components |
 | **i18n surface** | Message catalogs + full-app URL prefixes + locale switcher + `user.locale` | Allowlist all HTML trees; never localize API/well-known |
 | **Platform hygiene** | Client-bundle check, server-fn contract check, sql-raw check, prod env validate, pinned deps | Missing scripts are in scope |
 
@@ -62,7 +63,7 @@ Prefer **existing** seams. Do not introduce new package boundaries. Ideal owners
 
 1. As a **clone author**, I want the Starter to contain only platform capabilities, so that I never unlearn foreign product domain.
 2. As a **clone author**, I want platform patterns to match a battle-tested Worker stack, so that I do not rediscover 307 loops, OAuth signature breaks, or silent 401-as-data bugs.
-3. As a **clone author**, I want no second inventiveness layer, so that I can rebrand structural UI without ripping out a fake design system.
+3. As a **clone author**, I want interaction behavior separate from presentation, so that I can replace the default skin without changing platform flows.
 4. As a **clone author**, I want pinned dependency versions, so that installs are reproducible.
 5. As a **clone author**, I want local Docker Postgres and Hyperdrive local connection strings to agree, so that `db:up` + `dev` work without secret port folklore.
 6. As a **clone author**, I want production deploy to refuse missing secrets, so that I cannot ship a half-configured Worker.
@@ -96,7 +97,7 @@ Prefer **existing** seams. Do not introduce new package boundaries. Ideal owners
 34. As a **Worker operator**, I want auth HTTP rate limiting, so that credential stuffing is not left to per-isolate memory alone.
 35. As a **Worker operator**, I want production configuration validated before serving, so that missing env fails closed with a generic 500.
 36. As a **developer**, I want composed Base UI Field/Select/Dialog/Checkbox/Tabs with correct data attributes, so that forms and account tabs look and behave correctly.
-37. As a **developer**, I want structural shells for auth, dashboard, and admin without a brand skin, so that flows are navigable and rebrandable.
+37. As a **developer**, I want replaceable shells for auth, dashboard, and admin, so that flows work out of the box and support my product design.
 38. As a **developer**, I want dead UI modules and unused dependencies removed, so that the tree matches what ships.
 39. As a **developer**, I want one token/utility path for chrome colors, so that pages do not mix invented semantic tokens with raw neutral utility classes.
 40. As a **developer**, I want API and well-known routes free of locale prefixes, so that clients and discovery stay stable.
@@ -124,8 +125,8 @@ Prefer **existing** seams. Do not introduce new package boundaries. Ideal owners
 ### A. Extraction fidelity (policy)
 
 1. **Source of structural truth** for platform capabilities is the mature private reference platform’s web app. Open docs never name that product, its domains, monorepo paths, or internal services.
-2. **Allowed deltas** from the reference: strip product domain; replace brand strings with env-driven site identity; locale set `en`/`de`; standalone package layout (not monorepo); omit optional observability until deliberately adopted; omit product-only crons, containers, AI bindings, and product SEO.
-3. **Disallowed deltas**: greenfield design systems; alternate control APIs for the same Base UI primitives; alternate locale switcher behavior; omitting load-bearing pipeline contracts “to keep the starter small”; inventing parallel helpers when a reference helper already exists.
+2. **Allowed deltas** from the reference: strip product domain; replace brand strings with env-driven site identity; locale set `en`/`de`; standalone package layout (not monorepo); omit optional observability until deliberately adopted; omit product-only crons, containers, AI bindings, and product SEO; independently customize theme, layout, and motion.
+3. **Disallowed deltas**: duplicate control APIs for the same Base UI primitives; breaking locale switcher link/query behavior; omitting load-bearing pipeline contracts “to keep the starter small”; inventing parallel helpers when a reference helper already exists.
 4. When a bug appears, **prefer deleting inventiveness and re-copying the reference pattern** over adding Starter-only special cases.
 
 ### B. Request pipeline
@@ -166,11 +167,11 @@ Prefer **existing** seams. Do not introduce new package boundaries. Ideal owners
 
 ### F. UI shell (amends ADR 0007)
 
-29. Interactive controls are **composed Base UI wrappers** with a small structural class vocabulary (layout, border, focus ring). Not a shadcn-like semantic token product (`primary`/`muted` design language as a second system).
-30. Prefer one **Auth shell** and one **App shell** (dashboard/admin nav variants) over a grab-bag of PageAlert/Surface dual export surfaces — unless those helpers map 1:1 to reference components.
+29. Interactive controls follow **Headless design**: compose Base UI directly and keep the default presentation in replaceable CSS layers. Semantic tokens, branding, and any visual style are allowed.
+30. Keep auth/dashboard/admin shells modular and replaceable. Shell appearance does not own platform authorization or flow contracts.
 31. **Delete** unused control modules, unused integration widgets, and dependencies with zero call sites (form/table/font/icon packages only stay if wired).
-32. Theme control may be a minimal light/dark (optional system) control for FOUC-safe class on `html`; it must not reintroduce a product marketing widget. No requirement to port decorative animation toggles.
-33. Do not ship enter/exit dialog motion if the reference deliberately removed it for cost/a11y consistency — match the calmer default.
+32. Light/dark/system behavior and the FOUC-safe `html` initialization are independent of theme-control presentation. Custom and animated controls are allowed.
+33. CSS and JavaScript motion, including enter/exit dialog effects, are allowed. Respect reduced-motion preferences per component, popup focus/lifecycle, and SSR hydration safety. Do not globally suppress product animation.
 
 ### G. Data, payments, RLS
 
@@ -197,16 +198,16 @@ Prefer **existing** seams. Do not introduce new package boundaries. Ideal owners
 
 ### J. Phased delivery (suggested merge order)
 
-**Phase 0 — Stop the bleeding (pipeline + config)** — **landed 2026-08-02**  
+**Phase 0 — Stop the bleeding (pipeline + config)** — **landed 2026-08-02**
 HttpError adapter + query handling; search stringify; Paraglide allowlist config; local DB port; OAuth TTL; scrub private comments; pin critical deps.
 
-**Phase 1 — Auth capability parity** — **landed 2026-08-02**  
+**Phase 1 — Auth capability parity** — **landed 2026-08-02**
 Rate limit; protected-resource metadata; user update guard; sign-in/up Turnstile/GitHub/passkey; redirect-if-authenticated; message coverage for auth routes.
 
-**Phase 2 — UI extraction** — **landed 2026-08-02**  
-Replace invented token/class system with composed Base UI + structural shell; fix Tabs; locale switcher links; delete dead code/deps; remove neutral-* dual palette.
+**Phase 2 — UI extraction** — **landed 2026-08-02**
+Use Headless Base UI with replaceable theme/control/layout CSS; fix Tabs state attributes; preserve locale switcher links; delete dead code/deps and duplicate palettes.
 
-**Phase 3 — Hygiene** — **landed 2026-08-02**  
+**Phase 3 — Hygiene** — **landed 2026-08-02**
 check scripts; validate-prod-env; security headers/CSP/cache-off; worker types; broader tests.
 
 Phases may land as stacked PRs; Phase 0 is not optional before calling the Starter “aligned.”
@@ -254,7 +255,7 @@ Product-domain suites (gateway, wallet, referral, tokenizer, containers) stay ou
 - Copying private brand identity, production domains, production secrets, or monorepo package names into the open template.
 - Adopting Sentry or full CSP product allowlists as mandatory if not yet chosen — patterns may be stubbed; full observability productization is optional follow-up.
 - Changing the in-tree locale pair away from `en`/`de`.
-- Building a new design system, marketing homepage, or animated brand theme toggle.
+- Requiring a specific product brand or marketing design as the template default. Products may add their own design systems, marketing pages, and animated controls.
 - Multi-email transports, SQLite/D1, subscription billing product, env-based auto Superadmin.
 - Perfect visual parity with the private reference’s marketing chrome.
 
@@ -265,7 +266,7 @@ Product-domain suites (gateway, wallet, referral, tokenizer, containers) stay ou
 - The living baseline spec (`2026-08-01-platform-capabilities.md`) remains the capability catalog; **this spec is the alignment remediation** when implementation diverged from extraction.
 - “Smaller starter” is not an excuse to drop load-bearing contracts; size reduction must come from **deleting inventiveness and product domain**, not from deleting wire integrity.
 - When in doubt, open the reference module and port structure; do not redesign from memory.
-- Human review gate: this draft is for maintainer inspection before agent implementation (`ready-for-agent` only after approval).
+- The original review checklist below records historical remediation. Current Headless design and motion customization follow `DESIGN.md` and amended ADR 0007.
 
 ---
 
@@ -273,10 +274,10 @@ Product-domain suites (gateway, wallet, referral, tokenizer, containers) stay ou
 
 - [x] Phase 0 pipeline contracts landed and tested
 - [x] Auth UI parity with configured server plugins
-- [x] Invented design-system files removed or replaced by composed Base UI + structural shell
+- [x] UI uses Headless Base UI + replaceable default presentation (amended 2026-10-09)
 - [x] Paraglide allowlist + identity catch-all active; locale switcher is link-based
 - [x] Hygiene scripts in `check`; prod env validation on deploy path
 - [x] No private product names/paths in shippable tree
-- [ ] CONTEXT + ADRs updated and consistent with behavior *(docs already approved; no rewrite required by implementation)*
-- [ ] Capability baseline spec status note points at this remediation
-- [ ] Maintainer sign-off on this draft
+- [x] UI policy in CONTEXT + ADRs updated to Headless design (2026-10-09)
+- [x] Capability baseline points to current Headless design and historical remediation
+- [ ] Historical platform remediation sign-off (separate from the authorized Headless update)

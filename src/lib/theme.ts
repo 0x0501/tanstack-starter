@@ -7,8 +7,6 @@ export function readThemePreference(): ThemePreference {
 	try {
 		const raw = localStorage.getItem(THEME_STORAGE_KEY);
 		if (raw === "light" || raw === "dark" || raw === "system") return raw;
-		// Legacy: older script stored only light|dark; treat missing as system.
-		if (raw === null) return "system";
 	} catch {
 		// ignore
 	}
