@@ -20,14 +20,14 @@ _Avoid_: feature, module, plugin (unless referring to a Better Auth plugin speci
 
 **Extraction fidelity**:
 Platform code is obtained by stripping product domain from a mature reference platform pattern and keeping load-bearing contracts intact. Open docs never name the private reference product, its domains, monorepo paths, or internal services.
-_Avoid_: greenfield redesign of auth/pipeline/UI contracts “for the starter”; inventiveness that reintroduces solved bugs; shippable comments that identify the private source.
+_Avoid_: greenfield redesign of auth/pipeline contracts “for the starter”; inventiveness that reintroduces solved bugs; shippable comments that identify the private source.
 
 **Reference platform (private)**:
 The mature production system whose platform patterns the Starter extracts. It is not a dependency, not a package, and not mentioned by name in the open template.
 _Avoid_: linking clones back to the private monorepo; treating product features of that system as Starter defaults.
 
 **Inventiveness**:
-Starter-only redesign of a platform concern that already has a proven pattern (second design system, alternate error bus, button-only locale switcher, dropping HttpError wire serialization, default localize-all URLs). Inventiveness is a defect relative to extraction fidelity.
+Starter-only redesign of a platform concern that already has a proven pattern (alternate error bus, button-only locale switcher, dropping HttpError wire serialization, default localize-all URLs). Inventiveness is a defect relative to extraction fidelity. Replacing presentation, theme tokens, layouts, or animations is expected Headless customization, not inventiveness.
 _Avoid_: “temporary” parallel helpers that become the real API.
 
 ### Identity & auth
@@ -142,13 +142,21 @@ _Avoid_: admin backend; fake SaaS KPI widgets; separate `/security` route as the
 Administrator shell under `/admin` (locale prefix wraps the path under full-app URL i18n): Users, Audit Log, and OAuth Apps. Reachable by Admin and Superadmin alike.
 _Avoid_: superadmin-only backend as a second product; CMS; English-only or path-neutral admin.
 
-**Base UI control**:
-An interactive control from `@base-ui/react`, exposed through **composed wrappers** (field, button, select, dialog, checkbox, tabs, menu, etc.) that follow proven platform APIs after brand removal. Starter interactive UI is Base UI; brand styling is not.
-_Avoid_: HeroUI, Radix, shadcn, native top-layer dialog as the default modal pattern; unused compound re-exports; wrong state attributes (e.g. tabs `selected` vs `active`).
+**Headless UI**:
+Interaction and platform behavior are independent of visual identity. Base UI owns composite interaction semantics; replaceable CSS and page composition own appearance. A default skin makes platform flows usable out of the box. Headless does not mean minimalist or prohibit branding, tokens, or motion. See `DESIGN.md`.
+_Avoid_: a mandatory visual style; hard-coded appearance inside behavioral wrappers; treating reference visuals as platform contracts.
 
-**Structural shell**:
-Layout-only presentation (stacks, grids, max-width, nav landmarks) so auth and admin flows are navigable. Not a design system and not brand identity.
-_Avoid_: theme, skin, design tokens as Starter deliverables; a substitute “neutral SaaS” semantic token product (primary/muted design language) as a second system.
+**Base UI control**:
+An unstyled interactive control from `@base-ui/react`, composed directly through the library's native parts, props, refs, state attributes, and animation lifecycle. Ordinary buttons, inputs, and links may use native HTML. Default presentation classes are opt-in.
+_Avoid_: pass-through wrappers; duplicate interaction libraries for the same control; wrong state attributes (e.g. tabs `selected` vs `active`).
+
+**Application shell**:
+Replaceable auth, dashboard, or admin layout that provides navigation and hosts platform flows. Layout, colors, typography, theme tokens, and motion are product choices. The shipped shell is a working starting point.
+_Avoid_: requiring structure-only styling; coupling authorization or OAuth behavior to a particular shell appearance.
+
+**Motion**:
+Presentation behavior implemented with CSS or a JavaScript animation library. Page, control, theme, and decorative animations are allowed. Components honor reduced-motion preferences and preserve focus and hydration safety.
+_Avoid_: global animation suppression; an arbitrary ban on enter/exit effects; losing focus restoration while animating a popup.
 
 **Request pipeline**:
 The Start instance, Worker/server entry, router rewrite/search/trailing-slash behavior, Paraglide ambient locale, security headers, and client-bundle boundary that every HTML and server-fn request shares.
@@ -224,7 +232,7 @@ _Avoid_: request log; every sign-in as an audit row.
 - Fulfillment trusts the Purchase row's amount and user, never amounts reported only in a payment callback.
 - Payment provider adapters that are disabled or unconfigured are refused server-side.
 - Production database access is Hyperdrive → Postgres; the Better Auth Drizzle adapter is `pg` only.
-- Interactive UI controls are composed Base UI wrappers; brand styling and second design systems are clone-time work, not Starter deliverables.
+- UI is Headless: Base UI owns composite interactions; the default theme/layout/motion are replaceable. No visual style or animation approach is mandatory. Accessibility and platform flow contracts survive customization.
 - User-facing pages are full-app i18n (messages + URL prefixes for public, auth, dashboard, admin; en/de in-tree); `/api` and `/.well-known` stay unprefixed; signed-in locale preference is stored on the user.
 - Auth pages expose the same capabilities the server enables (Turnstile, GitHub, passkey) when those are configured — UI must not lag plugins.
 - First Superadmin is created by operator SQL on `user.role`, not by open registration races.

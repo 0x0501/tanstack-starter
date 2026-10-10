@@ -1,3 +1,5 @@
+import { Select } from "@base-ui/react/select";
+import { Tabs } from "@base-ui/react/tabs";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -9,18 +11,6 @@ import {
 	inputClass,
 	mutedTextClass,
 } from "@/components/shells";
-import {
-	Select,
-	SelectIcon,
-	SelectItem,
-	SelectItemText,
-	SelectPopup,
-	SelectPortal,
-	SelectPositioner,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
-import { Tabs, TabsList, TabsPanel, TabsTab } from "@/components/ui/tabs";
 import { authClient } from "@/lib/auth-client";
 import * as m from "@/paraglide/messages";
 import {
@@ -176,14 +166,20 @@ function AccountPage() {
 				<p className="mb-4 text-sm text-foreground">{message}</p>
 			) : null}
 
-			<Tabs defaultValue="profile">
-				<TabsList>
-					<TabsTab value="profile">{m.account_tab_profile()}</TabsTab>
-					<TabsTab value="security">{m.account_tab_security()}</TabsTab>
-					<TabsTab value="sessions">{m.account_tab_sessions()}</TabsTab>
-				</TabsList>
+			<Tabs.Root defaultValue="profile">
+				<Tabs.List className="ui-tabs-list">
+					<Tabs.Tab className="ui-tabs-tab" value="profile">
+						{m.account_tab_profile()}
+					</Tabs.Tab>
+					<Tabs.Tab className="ui-tabs-tab" value="security">
+						{m.account_tab_security()}
+					</Tabs.Tab>
+					<Tabs.Tab className="ui-tabs-tab" value="sessions">
+						{m.account_tab_sessions()}
+					</Tabs.Tab>
+				</Tabs.List>
 
-				<TabsPanel value="profile">
+				<Tabs.Panel className="ui-tabs-panel" value="profile">
 					<form onSubmit={saveProfile} className="max-w-md">
 						<Field label={m.field_display_name()}>
 							<input
@@ -193,41 +189,43 @@ function AccountPage() {
 							/>
 						</Field>
 						<Field label={m.field_locale()}>
-							<Select
+							<Select.Root
 								value={locale}
 								onValueChange={(v) => {
 									if (typeof v === "string") setLocale(v);
 								}}
 							>
-								<SelectTrigger>
-									<SelectValue>
+								<Select.Trigger className="ui-select-trigger">
+									<Select.Value>
 										{(value: string | null) =>
 											value === "de" ? m.locale_de() : m.locale_en()
 										}
-									</SelectValue>
-									<SelectIcon />
-								</SelectTrigger>
-								<SelectPortal>
-									<SelectPositioner>
-										<SelectPopup>
-											<SelectItem value="en">
-												<SelectItemText>{m.locale_en()}</SelectItemText>
-											</SelectItem>
-											<SelectItem value="de">
-												<SelectItemText>{m.locale_de()}</SelectItemText>
-											</SelectItem>
-										</SelectPopup>
-									</SelectPositioner>
-								</SelectPortal>
-							</Select>
+									</Select.Value>
+									<Select.Icon className="ui-select-icon">
+										<span aria-hidden>▾</span>
+									</Select.Icon>
+								</Select.Trigger>
+								<Select.Portal>
+									<Select.Positioner sideOffset={4} className="ui-positioner">
+										<Select.Popup className="ui-select-popup">
+											<Select.Item className="ui-select-item" value="en">
+												<Select.ItemText>{m.locale_en()}</Select.ItemText>
+											</Select.Item>
+											<Select.Item className="ui-select-item" value="de">
+												<Select.ItemText>{m.locale_de()}</Select.ItemText>
+											</Select.Item>
+										</Select.Popup>
+									</Select.Positioner>
+								</Select.Portal>
+							</Select.Root>
 						</Field>
 						<button type="submit" className={`${buttonClass} max-w-xs`}>
 							{m.account_save_profile()}
 						</button>
 					</form>
-				</TabsPanel>
+				</Tabs.Panel>
 
-				<TabsPanel value="security">
+				<Tabs.Panel className="ui-tabs-panel" value="security">
 					<section className="mb-8">
 						{overview.isLoading ? (
 							<p className={mutedTextClass}>{m.common_loading()}</p>
@@ -389,9 +387,9 @@ function AccountPage() {
 							{m.account_passkey_hint()}
 						</p>
 					</section>
-				</TabsPanel>
+				</Tabs.Panel>
 
-				<TabsPanel value="sessions">
+				<Tabs.Panel className="ui-tabs-panel" value="sessions">
 					<button
 						type="button"
 						className={`${buttonClass} mb-3 max-w-xs`}
@@ -420,8 +418,8 @@ function AccountPage() {
 					>
 						{m.action_sign_out()}
 					</button>
-				</TabsPanel>
-			</Tabs>
+				</Tabs.Panel>
+			</Tabs.Root>
 		</DashboardShell>
 	);
 }

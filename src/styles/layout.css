@@ -1,0 +1,93 @@
+/* Replaceable page layouts. Tailwind utilities take precedence. */
+@layer components {
+	/* Simple page width — mobile to 4K */
+	.page {
+		width: 100%;
+		max-width: 42rem;
+		margin-inline: auto;
+		padding: 1.5rem 1rem 3rem;
+	}
+
+	.page--wide {
+		max-width: 56rem;
+	}
+
+	.page--narrow {
+		max-width: 24rem;
+	}
+
+	@media (min-width: 640px) {
+		.page {
+			padding: 2rem 1.5rem 4rem;
+		}
+	}
+
+	@media (min-width: 2560px) {
+		.page {
+			max-width: 48rem;
+			padding: 3rem 2rem 5rem;
+			font-size: 16px;
+		}
+		.page--wide {
+			max-width: 64rem;
+		}
+	}
+
+	.auth-shell {
+		min-height: 100dvh;
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+	}
+
+	.auth-shell__header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.5rem;
+		margin-bottom: 1.5rem;
+	}
+
+	.shell-title {
+		font-size: 1.25rem;
+		font-weight: 500;
+		letter-spacing: -0.025em;
+	}
+
+	.auth-shell__title {
+		margin-bottom: 1.5rem;
+	}
+
+	.auth-shell__content {
+		padding: 1rem;
+	}
+
+	.app-shell__header {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+		margin-bottom: 2rem;
+		border-bottom: 1px solid var(--border);
+		padding-bottom: 1rem;
+	}
+
+	.shell-nav-link:hover {
+		text-decoration: underline;
+	}
+
+	.shell-nav-link[aria-current="page"] {
+		font-weight: 600;
+		text-decoration: underline;
+	}
+
+	@media (min-width: 640px) {
+		.auth-shell__content {
+			padding: 1.25rem;
+		}
+		.app-shell__header {
+			flex-direction: row;
+			align-items: center;
+			justify-content: space-between;
+		}
+	}
+}

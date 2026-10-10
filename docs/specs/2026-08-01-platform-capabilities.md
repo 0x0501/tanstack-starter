@@ -5,7 +5,7 @@
 **Glossary:** `CONTEXT.md`  
 **ADRs:** `docs/adr/0001`–`0011`  
 
-**Remediation:** Implementation drifted from extraction fidelity (invented UI/i18n layers; missing pipeline contracts). Alignment work is specified in [`2026-08-02-platform-alignment-extraction.md`](./2026-08-02-platform-alignment-extraction.md). Prefer that spec for “what to fix now”; this document remains the capability catalog and non-goals list.
+**Policy update (2026-10-09):** UI follows [Headless design](../../DESIGN.md) and amended ADR 0007. The [alignment spec](./2026-08-02-platform-alignment-extraction.md) records earlier platform remediation; its original structure-only visual restrictions are superseded. This document remains the capability catalog.
 
 ---
 
@@ -27,7 +27,7 @@ Ship a **generic SaaS Starter** that includes:
 6. **Standard pages** — sign-in, sign-up, forgot/reset password, 2FA challenge, OAuth consent.
 7. **User dashboard** — `/dashboard` overview + account.
 8. **Admin console** — `/admin` Users, Audit Log, OAuth Apps.
-9. **UI** — Base UI controls + structural shell only.
+9. **UI** — Headless Base UI interactions + replaceable default theme, shells, and motion.
 10. **Full-app i18n** — Paraglide messages **and** URL prefixes for public, auth, dashboard, and admin; machine paths unprefixed; `user.locale`; locales `en` + `de`.
 11. **Worker lessons** — JWKS usable on Workers, body-limited webhooks, client-bundle boundaries, server-fn POST contract, session cookie-cache bounds.
 
@@ -43,7 +43,7 @@ Ship a **generic SaaS Starter** that includes:
 - Separate admin membership table or dual-write roles.
 - Env/first-user automatic Superadmin promotion.
 - Full auth SIEM.
-- Brand design system / HeroUI.
+- A mandatory product brand or visual style; clones own their design.
 - zh locales as Starter defaults (clones may add; in-tree is en+de).
 - Better Auth **api-key** plugin as a Starter default (omit unless a clone needs a generic key product).
 
@@ -79,7 +79,7 @@ Ideal: product domain only depends on **purchase-paid hook** + **session/user id
 - Payment adapters + Purchase + hook + toggles + optional demo checkout
 - Full-app i18n (en/de): messages + URL prefixes for public/auth/dashboard/admin; identity catch-all for `/api` and `/.well-known`; link-based locale switcher
 - Request pipeline contracts (HttpError wire, original Request, trailing slash preserve)
-- Composed Base UI + structural shell only (no second design system)
+- Headless Base UI with replaceable presentation; design and motion follow `DESIGN.md`
 - Platform hygiene in `check` + prod env validation on deploy; pinned platform deps
 - Tests for the pipeline and platform seams; README bootstrap; client-bundle check after build
 - No private reference product names/paths in the shippable tree

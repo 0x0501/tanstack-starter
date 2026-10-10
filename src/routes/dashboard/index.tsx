@@ -22,12 +22,9 @@ const methodsQuery = {
 
 export const Route = createFileRoute("/dashboard/")({
 	component: DashboardOverview,
-	// Warmed, not awaited: the overview renders its identity and status panels
-	// from the route context alone, so blocking on the checkout methods would
-	// delay a page that has something to show without them.
-	loader: ({ context }) => {
-		context.queryClient.ensureQueryData(methodsQuery);
-	},
+	// The checkout panel renders this query during SSR. Await it so streamed
+	// query data cannot change its loading text before the client hydrates.
+	loader: ({ context }) => context.queryClient.ensureQueryData(methodsQuery),
 });
 
 function DashboardOverview() {

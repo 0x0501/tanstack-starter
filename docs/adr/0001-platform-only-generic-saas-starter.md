@@ -2,8 +2,9 @@
 
 ## Status
 
-Accepted — 2026-08-01.  
+Accepted — 2026-08-01.
 Amended — 2026-08-02 (extraction fidelity).
+Amended — 2026-10-09 (Headless presentation is customizable).
 
 ## Context
 
@@ -17,7 +18,7 @@ Equally damaging: **reinventing** platform infrastructure that a mature producti
 
 2. The repository is a **standalone template**. Clones do not share packages back into other products for “common auth” (that path reintroduces domain leakage).
 
-3. **Extraction fidelity (2026-08-02):** Platform code is obtained by **stripping product domain from a mature reference platform pattern**, not by redesigning the platform layer from scratch. Allowed deltas: remove product domain; env-driven brand strings; locale set (`en`/`de`); standalone packaging; omit optional observability until adopted. Disallowed deltas: alternate design systems, alternate load-bearing pipeline semantics, or dropping wire/OAuth/i18n contracts to “keep the starter small.” Open docs and shippable comments never name the private reference product, its domains, or monorepo paths.
+3. **Extraction fidelity (2026-08-02):** Platform code is obtained by **stripping product domain from a mature reference platform pattern**, not by redesigning the platform layer from scratch. Allowed deltas: remove product domain; env-driven brand strings; locale set (`en`/`de`); standalone packaging; omit optional observability until adopted; customize presentation, theme tokens, layout, and motion under `DESIGN.md`. Disallowed deltas: alternate load-bearing pipeline semantics, or dropping wire/OAuth/i18n contracts to “keep the starter small.” Open docs and shippable comments never name the private reference product, its domains, or monorepo paths.
 
 ## Consequences
 

@@ -26,7 +26,7 @@ A TanStack Start template that runs on Cloudflare Workers, using Better Auth as 
 - **Email**: react-email templates rendered and sent via the Cloudflare `send_email` binding
 - **Captcha**: Cloudflare Turnstile (Better Auth captcha plugin)
 - **i18n**: Paraglide JS (inlang) — messages in `project.inlang/messages`
-- **UI**: Base UI (`@base-ui/react`) composed controls; Tailwind CSS v4 for styling
+- **UI**: Headless Base UI (`@base-ui/react`) interactions; replaceable presentation with Tailwind CSS v4
 - **Tooling**: Bun, Biome (lint/format), Vitest (+ Testcontainers), Playwright, T3Env
 
 ## Commands
@@ -112,6 +112,10 @@ Both pages use a pass-through `validateSearch` so the signed query stays in the 
 `src/db/schema.ts` must `export *` from both `auth.schema.ts` and `platform.schema.ts` (not a bare `import`) — Drizzle and drizzle-kit read the tables through it. Platform tables you own by hand go in `platform.schema.ts`; never hand-edit `auth.schema.ts`.
 
 ## Conventions
+
+- **Design is Headless**, as defined in [`DESIGN.md`](./DESIGN.md). Compose Base UI directly; keep platform behavior separate from theme, layout, and motion. Default presentation is replaceable, never a mandatory minimalist style.
+- Colors, typography, tokens, branding, and animations are product choices. CSS and JavaScript animation libraries are allowed; preserve accessibility, reduced-motion support, and SSR hydration safety.
+- Default styles live in `src/styles/{theme,layout,ui}.css`; presentation rules use CSS layers so utility classes can override them. Do not add pass-through component wrappers to restyle Base UI.
 
 - Biome, **tabs**, double quotes. Run `bun run check` and `bun run typecheck` before finishing.
 - Path aliases: `@/*` and `#/*` both map to `src/*`.

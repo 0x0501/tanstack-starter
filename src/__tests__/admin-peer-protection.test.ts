@@ -128,7 +128,6 @@ async function makeUserTable(): Promise<AppDatabase> {
 			banned BOOLEAN DEFAULT false,
 			ban_reason TEXT,
 			ban_expires TIMESTAMP,
-			stripe_customer_id TEXT,
 			tokens_revoked_at TIMESTAMP,
 			locale TEXT
 		);

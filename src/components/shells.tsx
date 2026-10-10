@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import type { ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import { LocaleSwitcher } from "@/components/LocaleSwitcher";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import * as m from "@/paraglide/messages";
@@ -8,8 +8,6 @@ import { cardClass, labelClass, mutedTextClass } from "./ui/styles";
 
 export {
 	buttonClass,
-	buttonDestructiveClass,
-	buttonGhostClass,
 	buttonPrimaryClass,
 	buttonSecondaryClass,
 	cardClass,
@@ -19,17 +17,18 @@ export {
 	mutedTextClass,
 } from "./ui/styles";
 
-/** Structural auth layout (no brand skin). */
+type ShellProps = ComponentProps<"div"> & { title: string };
+
+/** Auth flow layout; presentation is replaceable through CSS and className. */
 export function AuthShell({
 	title,
 	children,
-}: {
-	title: string;
-	children: ReactNode;
-}) {
+	className,
+	...props
+}: ShellProps) {
 	return (
-		<div className="page page--narrow flex min-h-[100dvh] flex-col justify-center">
-			<div className="mb-6 flex items-center justify-between gap-2">
+		<div {...props} className={cn("page page--narrow auth-shell", className)}>
+			<div className="auth-shell__header">
 				<Link to="/" className={cn(mutedTextClass, "hover:text-foreground")}>
 					← {m.nav_home()}
 				</Link>
@@ -38,28 +37,34 @@ export function AuthShell({
 					<ThemeToggle />
 				</div>
 			</div>
-			<h1 className="mb-6 text-xl font-medium tracking-tight">{title}</h1>
-			<div className={cn(cardClass, "p-4 sm:p-5")} data-testid="auth-card">
+			<h1 className="shell-title auth-shell__title">{title}</h1>
+			<div
+				className={cn(cardClass, "auth-shell__content")}
+				data-testid="auth-card"
+			>
 				{children}
 			</div>
 		</div>
 	);
 }
 
-/** Structural signed-in member shell. */
+/** Signed-in member layout. */
 export function DashboardShell({
 	title,
 	children,
-}: {
-	title: string;
-	children: ReactNode;
-}) {
+	className,
+	...props
+}: ShellProps) {
 	return (
-		<div className="page" data-testid="dashboard-shell">
-			<header className="mb-8 flex flex-col gap-3 border-b border-border pb-4 sm:flex-row sm:items-center sm:justify-between">
+		<div
+			{...props}
+			className={cn("page app-shell", className)}
+			data-testid="dashboard-shell"
+		>
+			<header className="app-shell__header">
 				<div>
 					<p className="text-xs text-muted-foreground">{m.dashboard_title()}</p>
-					<h1 className="text-xl font-medium tracking-tight">{title}</h1>
+					<h1 className="shell-title">{title}</h1>
 				</div>
 				<div className="flex flex-wrap items-center gap-3">
 					<nav
@@ -83,20 +88,23 @@ export function DashboardShell({
 	);
 }
 
-/** Structural administrator shell. */
+/** Administrator layout. */
 export function AdminShell({
 	title,
 	children,
-}: {
-	title: string;
-	children: ReactNode;
-}) {
+	className,
+	...props
+}: ShellProps) {
 	return (
-		<div className="page page--wide" data-testid="admin-shell">
-			<header className="mb-8 flex flex-col gap-3 border-b border-border pb-4 sm:flex-row sm:items-center sm:justify-between">
+		<div
+			{...props}
+			className={cn("page page--wide app-shell", className)}
+			data-testid="admin-shell"
+		>
+			<header className="app-shell__header">
 				<div>
 					<p className="text-xs text-muted-foreground">{m.admin_title()}</p>
-					<h1 className="text-xl font-medium tracking-tight">{title}</h1>
+					<h1 className="shell-title">{title}</h1>
 				</div>
 				<div className="flex flex-wrap items-center gap-3">
 					<nav
@@ -139,8 +147,10 @@ function ShellNavLink({
 	return (
 		<Link
 			to={to}
+			activeOptions={{ exact: true }}
+			activeProps={{ "aria-current": "page" }}
 			className={cn(
-				"hover:underline",
+				"shell-nav-link",
 				muted ? "text-muted-foreground" : "text-foreground",
 			)}
 		>

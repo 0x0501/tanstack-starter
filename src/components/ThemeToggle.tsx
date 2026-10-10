@@ -1,9 +1,5 @@
-import { useEffect, useState } from "react";
-import {
-	applyTheme,
-	readThemePreference,
-	type ThemePreference,
-} from "@/lib/theme";
+import { useTheme } from "@/hooks/use-theme";
+import type { ThemePreference } from "@/lib/theme";
 import * as m from "@/paraglide/messages";
 import { cn } from "@/utils/cn";
 
@@ -20,23 +16,9 @@ function labelFor(option: ThemePreference): string {
 	}
 }
 
-/** Minimal Light / Dark / System control. */
+/** Default presentation of the Headless theme behavior. */
 export function ThemeToggle({ className }: { className?: string }) {
-	const [preference, setPreference] = useState<ThemePreference>("system");
-	const [mounted, setMounted] = useState(false);
-
-	useEffect(() => {
-		setPreference(readThemePreference());
-		setMounted(true);
-	}, []);
-
-	useEffect(() => {
-		if (!mounted || preference !== "system") return;
-		const mq = window.matchMedia("(prefers-color-scheme: dark)");
-		const onChange = () => applyTheme("system");
-		mq.addEventListener("change", onChange);
-		return () => mq.removeEventListener("change", onChange);
-	}, [mounted, preference]);
+	const { preference, setTheme, mounted } = useTheme();
 
 	return (
 		<fieldset
@@ -53,16 +35,8 @@ export function ThemeToggle({ className }: { className?: string }) {
 						data-testid={`theme-${option}`}
 						data-active={active ? "true" : "false"}
 						aria-pressed={active}
-						onClick={() => {
-							setPreference(option);
-							applyTheme(option);
-						}}
-						className={cn(
-							"h-8 rounded px-2 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring",
-							active
-								? "bg-primary text-primary-foreground"
-								: "text-muted-foreground hover:text-foreground",
-						)}
+						onClick={() => setTheme(option)}
+						className="ui-theme-option"
 					>
 						{labelFor(option)}
 					</button>

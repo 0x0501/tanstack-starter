@@ -1,6 +1,6 @@
 # TanStack Starter
 
-A generic SaaS starter for **TanStack Start** on **Cloudflare Workers**: hardened Better Auth, roles with peer protection, Postgres + Hyperdrive + RLS skeleton, Cloudflare Email, Turnstile, optional payment adapters (Purchase + purchase-paid hook), user dashboard, and admin console.
+A Headless SaaS starter for **TanStack Start** on **Cloudflare Workers**: hardened Better Auth, roles with peer protection, Postgres + Hyperdrive + RLS skeleton, Cloudflare Email, Turnstile, optional payment adapters (Purchase + purchase-paid hook), user dashboard, and admin console.
 
 Platform capabilities only — product domain (wallets, marketplaces, etc.) stays in clones. See `CONTEXT.md` and `docs/specs/2026-08-01-platform-capabilities.md`.
 
@@ -25,6 +25,17 @@ bun run dev
 ```
 
 Open **http://localhost:3000** (not `127.0.0.1` — cookie/origin config is for `localhost`).
+
+## Headless UI and customization
+
+Auth, account, and admin flows work out of the box. Base UI owns composite interactions; the default theme and layout are replaceable. No visual style or animation approach is mandatory.
+
+- `src/styles/theme.css`: light/dark palette, typography, radii, and Tailwind token mappings.
+- `src/styles/ui.css`: opt-in control styling and default menu/select motion.
+- `src/styles/layout.css`: page widths and shell layouts; shells also accept `className` and div props.
+- `src/hooks/use-theme.ts`: theme behavior for a custom control.
+
+Compose Base UI directly for new controls. Override defaults with Tailwind utilities or replace the CSS imports in `src/styles.css`. CSS animations and libraries such as Motion/GSAP are allowed, with reduced-motion treatment per component. See [DESIGN.md](./DESIGN.md) for customization examples and the reviewed starter references.
 
 ## Database (Postgres + Hyperdrive)
 
@@ -131,6 +142,17 @@ bun run test
 
 Requires **Docker** (Testcontainers starts Postgres for the suite). Unit seams use temp tables as superuser; RLS policy tests migrate into a dedicated `rls_test` database and connect as the real `starter_app` role (NOBYPASSRLS).
 
+Browser checks cover default and custom presentation, popup motion, locale links, and responsive layouts. To include authenticated hydration and account-control checks, seed a local user, start the app on its configured origin, and pass that user's credentials:
+
+```bash
+bun run db:seed
+bun run dev
+# In another terminal, after setting E2E_USER_EMAIL and E2E_USER_PASSWORD:
+E2E_BASE_URL=http://localhost:3000 bun run test:e2e
+```
+
+Without those credentials, only the authenticated browser test is skipped.
+
 Seams under test:
 
 | Seam | Coverage |
@@ -142,7 +164,7 @@ Seams under test:
 | Webhook body-limit + signature | body-limit + payments-verify |
 | RLS helpers / policies | API smoke + **admin_action** policy integration |
 
-Bootstrap SQL in `drizzle/0000`–`0002` is the clone-ready path (`db:migrate` without a generate step). After editing Drizzle schema, prefer `bun run db:generate` and treat hand SQL as bootstrap history unless you squash.
+Bootstrap SQL in `drizzle/0000`–`0002` is the clone-ready path (`db:migrate` without a generate step). `0002` contains generated table/policy DDL and has a matching Drizzle snapshot; the required `is_admin()` function is placed before the policies that call it. After editing Drizzle schema, use `bun run db:generate`. The baseline targets fresh clones.
 
 ### Client-bundle check
 
@@ -155,9 +177,9 @@ bun run check:client-bundle
 
 `bun run deploy` runs the client-bundle check after build.
 
-### Remaining polish (non-blocking)
+### Product extensions
 
-Some auth/security form strings remain English literals; clones expand Paraglide messages as needed. Out of scope as Starter defaults: wallets, marketplace providers, consumer API-key products, zh locales (in-tree is en+de).
+Clones add their own domain, visual identity, and locales. In-tree locales are en/de; wallets, marketplace providers, and consumer API-key products belong to the derived product.
 
 ## Scripts
 
@@ -167,6 +189,7 @@ Some auth/security form strings remain English literals; clones expand Paraglide
 | `bun run build` | Production build |
 | `bun run deploy` | `validate-prod-env` → prod build → client-bundle check → `wrangler deploy` |
 | `bun run test` | Vitest (needs Docker) |
+| `bun run test:unit` | Vitest without database seams |
 | `bun run test:e2e` | Playwright |
 | `bun run check` | Biome + raw-SQL and server-fn guardrails |
 | `bun run typecheck` | `tsc --noEmit` |
@@ -176,6 +199,7 @@ Some auth/security form strings remain English literals; clones expand Paraglide
 
 ## Docs
 
+- [DESIGN.md](./DESIGN.md) — Headless design, customization, motion, and references
 - `CONTEXT.md` — glossary + invariants  
 - `docs/adr/` — architectural decisions  
 - `docs/specs/2026-08-01-platform-capabilities.md` — platform capabilities baseline  

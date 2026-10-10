@@ -31,10 +31,8 @@ export function LocaleSwitcher({
 				aria-label={m.language_label()}
 				data-testid="locale-switcher"
 				className={cn(
-					"inline-flex h-8 items-center gap-1 rounded px-2 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring",
-					bare
-						? "text-muted-foreground hover:text-foreground"
-						: "border border-border text-foreground hover:bg-muted",
+					"ui-locale-trigger",
+					!bare && "ui-locale-trigger--button",
 				)}
 			>
 				<span className="font-medium uppercase">{current}</span>
@@ -44,10 +42,10 @@ export function LocaleSwitcher({
 					side="bottom"
 					align="end"
 					sideOffset={6}
-					className="z-50"
+					className="ui-positioner"
 				>
 					<Menu.Popup
-						className="min-w-[9rem] overflow-hidden rounded border border-border bg-background py-1 text-foreground outline-none shadow-sm"
+						className="ui-menu-popup"
 						data-testid="locale-switcher-menu"
 					>
 						{locales.map((locale) => (
@@ -64,10 +62,7 @@ export function LocaleSwitcher({
 								onClick={() => {
 									writeLocaleCookie(locale);
 								}}
-								className={cn(
-									"block px-3 py-1.5 text-sm outline-none data-highlighted:bg-muted",
-									locale === current && "font-medium",
-								)}
+								className="ui-menu-item"
 								data-testid={`locale-link-${locale}`}
 								data-locale-cookie={LOCALE_COOKIE}
 							>
