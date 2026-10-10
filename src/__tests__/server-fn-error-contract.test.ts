@@ -18,7 +18,7 @@
 import {
 	defaultSerovalPlugins,
 	makeSerovalPlugin,
-} from "@tanstack/router-core";
+} from "@tanstack/router-core/ssr/client";
 import { fromJSON, toJSONAsync } from "seroval";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
