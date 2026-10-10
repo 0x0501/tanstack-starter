@@ -4,6 +4,18 @@ A Headless SaaS starter for **TanStack Start** on **Cloudflare Workers**: harden
 
 Platform capabilities only — product domain (wallets, marketplaces, etc.) stays in clones. See `CONTEXT.md` and `docs/specs/2026-08-01-platform-capabilities.md`.
 
+## Create a configured project with Mystack
+
+Mystack generates this starter with direct PostgreSQL, PostgreSQL (Hyperdrive), D1, Turso Cloud, Turso Local (libSQL), or native Bun SQLite; Stripe, Creem, NOWPayments and/or Polar; Cloudflare Email or Resend; and Cloudflare Workers, Nitro or native Bun. Hyperdrive, D1 and Cloudflare Email require Workers; local libSQL requires Nitro/Bun, and Bun SQLite requires Bun. Incompatible options are disabled in the wizard and rejected in flags.
+
+```sh
+bun install --cwd packages/mystack
+bun run cli:prepare
+bun run mystack create my-app
+```
+
+For the standalone `mystack create` command, build and install the CLI package as described in [packages/mystack/README.md](./packages/mystack/README.md). Generated projects include configuration-specific migrations, environment examples, scripts and setup instructions.
+
 ## Prerequisites
 
 - [Bun](https://bun.sh)

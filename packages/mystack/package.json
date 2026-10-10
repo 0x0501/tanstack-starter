@@ -1,0 +1,29 @@
+{
+	"name": "@mystack/cli",
+	"version": "0.1.0",
+	"description": "Create a configured TanStack Start application",
+	"license": "MIT",
+	"type": "module",
+	"engines": {
+		"node": ">=22.12.0"
+	},
+	"bin": {
+		"mystack": "./src/cli.mjs"
+	},
+	"files": ["src", "template", "assets", "README.md", "LICENSE"],
+	"scripts": {
+		"template:prepare": "node scripts/prepare-template.mjs",
+		"prepack": "npm run template:prepare",
+		"test": "bun run --cwd ../.. test:cli",
+		"test:generated": "node scripts/verify-generated.mjs",
+		"test:packed": "node scripts/verify-packed.mjs"
+	},
+	"dependencies": {
+		"@biomejs/biome": "2.5.15",
+		"@clack/prompts": "^1.8.1",
+		"@tanstack/router-generator": "1.167.38"
+	},
+	"publishConfig": {
+		"access": "public"
+	}
+}
