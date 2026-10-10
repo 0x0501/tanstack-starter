@@ -10,7 +10,7 @@ export function RootError({
 	error,
 	reset,
 }: {
-	error: Error;
+	error: unknown;
 	reset: () => void;
 }) {
 	const message =
